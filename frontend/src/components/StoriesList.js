@@ -161,7 +161,7 @@ const StoriesList = () => {
                 
                 <div className="story-meta">
                   <span>Code: {story.storyCode}</span>
-                  <span>{formatNumber(story.textLength)} words</span>
+                  <span>{formatNumber(story.textLength)} characters</span>
                 </div>
 
                 <div className="story-summary">
