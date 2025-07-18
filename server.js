@@ -15,6 +15,8 @@ app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Path to detective solutions directory
 const DETECTIVE_SOLUTIONS_DIR = path.join(__dirname, 'data');
+// Path to summaries directory
+const SUMMARIES_DIR = path.join(__dirname, 'summaries-concat-1k-v0');
 
 // API endpoint to get all detective solution metadata
 app.get('/api/stories', (req, res) => {
@@ -26,16 +28,41 @@ app.get('/api/stories', (req, res) => {
       const filePath = path.join(DETECTIVE_SOLUTIONS_DIR, file);
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       
+      // Extract author from author_metadata
+      const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+      const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+      const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown';
+      
+      // Extract story title from story_annotations
+      const storyTitle = data.original_metadata?.story_annotations?.["Story Title"] || 'Unknown';
+      
+      // Extract story code from filename (part before first underscore)
+      const storyCode = data.original_metadata?.story_code || data.metadata.event_name;
+      
+      // Try to read corresponding summary file
+      let storySummary = null;
+      try {
+        const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+        const summaryFilePath = path.join(SUMMARIES_DIR, summaryFileName);
+        if (fs.existsSync(summaryFilePath)) {
+          const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+          storySummary = summaryData.final_summary || null;
+        }
+      } catch (error) {
+        console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+      }
+      
       return {
         id: data.metadata.event_name,
         title: data.metadata.event_description,
-        author: data.original_metadata?.author_name || 'Unknown',
-        storyCode: data.original_metadata?.story_code || data.metadata.event_name,
-        storyTitle: data.original_metadata?.story_title || 'Unknown',
+        author: author,
+        storyCode: storyCode,
+        storyTitle: storyTitle,
         plotSummary: data.original_metadata?.plot_summary || '',
         textLength: data.metadata.story_length,
         isSolvable: data.original_metadata?.is_solvable || true,
-        model: data.metadata.model
+        model: data.metadata.model,
+        storySummary: storySummary
       };
     });
     
@@ -60,6 +87,20 @@ app.get('/api/stories/:id', (req, res) => {
     const filePath = path.join(DETECTIVE_SOLUTIONS_DIR, storyFile);
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     
+    // Try to add corresponding summary data
+    const storyCode = data.original_metadata?.story_code || data.metadata.event_name;
+    try {
+      const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+      const summaryFilePath = path.join(SUMMARIES_DIR, summaryFileName);
+      if (fs.existsSync(summaryFilePath)) {
+        const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+        data.storySummary = summaryData.final_summary || null;
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+      data.storySummary = null;
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Error reading story:', error);
@@ -78,16 +119,41 @@ app.get('/api/search', (req, res) => {
       const filePath = path.join(DETECTIVE_SOLUTIONS_DIR, file);
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       
+      // Extract author from author_metadata
+      const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+      const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+      const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown';
+      
+      // Extract story title from story_annotations
+      const storyTitle = data.original_metadata?.story_annotations?.["Story Title"] || 'Unknown';
+      
+      // Extract story code from filename (part before first underscore)
+      const storyCode = data.original_metadata?.story_code || data.metadata.event_name;
+      
+      // Try to read corresponding summary file
+      let storySummary = null;
+      try {
+        const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+        const summaryFilePath = path.join(SUMMARIES_DIR, summaryFileName);
+        if (fs.existsSync(summaryFilePath)) {
+          const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+          storySummary = summaryData.final_summary || null;
+        }
+      } catch (error) {
+        console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+      }
+      
       return {
         id: data.metadata.event_name,
         title: data.metadata.event_description,
-        author: data.original_metadata?.author_name || 'Unknown',
-        storyCode: data.original_metadata?.story_code || data.metadata.event_name,
-        storyTitle: data.original_metadata?.story_title || 'Unknown',
+        author: author,
+        storyCode: storyCode,
+        storyTitle: storyTitle,
         plotSummary: data.original_metadata?.plot_summary || '',
         textLength: data.metadata.story_length,
         isSolvable: data.original_metadata?.is_solvable || true,
         model: data.metadata.model,
+        storySummary: storySummary,
         fullData: data
       };
     });
@@ -135,7 +201,12 @@ app.get('/api/authors', (req, res) => {
     jsonFiles.forEach(file => {
       const filePath = path.join(DETECTIVE_SOLUTIONS_DIR, file);
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      const author = data.original_metadata?.author_name || 'Unknown';
+      
+      // Extract author from author_metadata
+      const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+      const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+      const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown';
+      
       authors.add(author);
     });
     

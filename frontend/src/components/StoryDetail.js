@@ -112,8 +112,13 @@ const StoryDetail = () => {
     <div>
       <header className="header">
         <div className="container">
-          <h1>{story.original_metadata?.story_title || 'Unknown Title'}</h1>
-          <p>by {story.original_metadata?.author_name || 'Unknown Author'}</p>
+          <h1>{story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title'}</h1>
+          <p>by {(() => {
+            const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+            const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
+            const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+            return author;
+          })()}</p>
         </div>
       </header>
 
@@ -124,7 +129,7 @@ const StoryDetail = () => {
 
         <div className="story-detail">
           <div className="story-detail-header">
-            <h2>{story.original_metadata?.story_title || 'Unknown Title'}</h2>
+            <h2>{story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title'}</h2>
             <p>Story Code: {story.metadata?.event_name}</p>
           </div>
 
@@ -134,7 +139,12 @@ const StoryDetail = () => {
             <div className="metadata-grid">
               <div className="metadata-item">
                 <div className="metadata-label">Author</div>
-                <div className="metadata-value">{story.original_metadata?.author_name || 'Unknown'}</div>
+                <div className="metadata-value">{(() => {
+                  const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+                  const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
+                  const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown';
+                  return author;
+                })()}</div>
               </div>
               <div className="metadata-item">
                 <div className="metadata-label">Story Code</div>
@@ -142,11 +152,11 @@ const StoryDetail = () => {
               </div>
               <div className="metadata-item">
                 <div className="metadata-label">Text Length</div>
-                <div className="metadata-value">{formatNumber(story.metadata?.story_length || 0)} words</div>
+                <div className="metadata-value">{formatNumber(story.metadata?.story_length || 0)} characters</div>
               </div>
               <div className="metadata-item">
                 <div className="metadata-label">Reveal Length</div>
-                <div className="metadata-value">{formatNumber(story.metadata?.reveal_length || 0)} words</div>
+                <div className="metadata-value">{formatNumber(story.metadata?.reveal_length || 0)} characters</div>
               </div>
               <div className="metadata-item">
                 <div className="metadata-label">Model Used</div>
@@ -190,20 +200,6 @@ const StoryDetail = () => {
                   Story Text
                 </button>
                 <button
-                  onClick={() => setActiveTab('solution')}
-                  style={{
-                    padding: '1rem 2rem',
-                    border: 'none',
-                    background: activeTab === 'solution' ? '#667eea' : 'transparent',
-                    color: activeTab === 'solution' ? 'white' : '#4a5568',
-                    cursor: 'pointer',
-                    borderRadius: '8px 8px 0 0',
-                    fontWeight: activeTab === 'solution' ? '600' : 'normal'
-                  }}
-                >
-                  Detective Solution
-                </button>
-                <button
                   onClick={() => setActiveTab('reveal')}
                   style={{
                     padding: '1rem 2rem',
@@ -216,6 +212,34 @@ const StoryDetail = () => {
                   }}
                 >
                   Reveal Segment
+                </button>
+                <button
+                  onClick={() => setActiveTab('solution')}
+                  style={{
+                    padding: '1rem 2rem',
+                    border: 'none',
+                    background: activeTab === 'solution' ? '#667eea' : 'transparent',
+                    color: activeTab === 'solution' ? 'white' : '#4a5568',
+                    cursor: 'pointer',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: activeTab === 'solution' ? '600' : 'normal'
+                  }}
+                >
+                  Solution (o3)
+                </button>
+                <button
+                  onClick={() => setActiveTab('summary')}
+                  style={{
+                    padding: '1rem 2rem',
+                    border: 'none',
+                    background: activeTab === 'summary' ? '#667eea' : 'transparent',
+                    color: activeTab === 'summary' ? 'white' : '#4a5568',
+                    cursor: 'pointer',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: activeTab === 'summary' ? '600' : 'normal'
+                  }}
+                >
+                  Summary (concat-1kwords-v0)
                 </button>
               </div>
             </div>
@@ -232,7 +256,7 @@ const StoryDetail = () => {
 
             {activeTab === 'solution' && (
               <div>
-                <div className="section-title">Detective Solution</div>
+                <div className="section-title">Solution (o3)</div>
                 <div className="solution-section">
                   <h4>AI Analysis:</h4>
                   <div style={{ marginTop: '1rem', lineHeight: '1.8' }}>
@@ -252,6 +276,27 @@ const StoryDetail = () => {
                 )}
                 <div className="story-text">
                   {story.story?.reveal_segment || 'No reveal segment available'}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'summary' && (
+              <div>
+                <div className="section-title">Summary (concat-1kwords-v0)</div>
+                <div className="story-text">
+                  {story.storySummary ? (
+                    <div style={{ lineHeight: '1.6' }}>
+                      {story.storySummary.split('\n').map((paragraph, index) => (
+                        <p key={index} style={{ marginBottom: '1rem' }}>
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontStyle: 'italic', color: '#666' }}>
+                      No summary available for this story
+                    </div>
+                  )}
                 </div>
               </div>
             )}
