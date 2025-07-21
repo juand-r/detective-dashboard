@@ -112,7 +112,11 @@ const StoryDetail = () => {
     <div>
       <header className="header">
         <div className="container">
-          <h1>{story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title'}</h1>
+          <h1>{(() => {
+            const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+            const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
+            return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
+          })()}</h1>
           <p>by {(() => {
             const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
             const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
@@ -129,8 +133,18 @@ const StoryDetail = () => {
 
         <div className="story-detail">
           <div className="story-detail-header">
-            <h2>{story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title'}</h2>
+            <h2>{(() => {
+              const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+              const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
+              return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
+            })()}</h2>
             <p>Story Code: {story.metadata?.event_name}</p>
+            {(() => {
+              const detective1 = story.original_metadata?.story_annotations?.["Name of Detective #1"] || '';
+              const detective2 = story.original_metadata?.story_annotations?.["Name of Detective #2"] || '';
+              const detectives = [detective1, detective2].filter(name => name && name !== '_unknown').join(', ');
+              return detectives ? <p>Detectives: {detectives}</p> : null;
+            })()}
           </div>
 
           <div className="story-detail-content">
@@ -138,37 +152,74 @@ const StoryDetail = () => {
             <div className="section-title">Story Metadata</div>
             <div className="metadata-grid">
               <div className="metadata-item">
-                <div className="metadata-label">Author</div>
+                <div className="metadata-label">Number of victims</div>
                 <div className="metadata-value">{(() => {
-                  const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-                  const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
-                  const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown';
-                  return author;
+                  const maleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Male"] || 0);
+                  const femaleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Female"] || 0);
+                  const nonBinaryVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Non-binary"] || 0);
+                  const unknownVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Unknown"] || 0);
+                  return maleVictims + femaleVictims + nonBinaryVictims + unknownVictims;
                 })()}</div>
               </div>
               <div className="metadata-item">
-                <div className="metadata-label">Story Code</div>
-                <div className="metadata-value">{story.original_metadata?.story_code || story.metadata?.event_name}</div>
+                <div className="metadata-label">Number of culprits</div>
+                <div className="metadata-value">{(() => {
+                  const maleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Male"] || 0);
+                  const femaleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Female"] || 0);
+                  const nonBinaryCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Non-binary"] || 0);
+                  const unknownCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Unknown"] || 0);
+                  return maleCulprits + femaleCulprits + nonBinaryCulprits + unknownCulprits;
+                })()}</div>
               </div>
               <div className="metadata-item">
-                <div className="metadata-label">Text Length</div>
-                <div className="metadata-value">{formatNumber(story.metadata?.story_length || 0)} characters</div>
+                <div className="metadata-label">Crimes</div>
+                <div className="metadata-value">{(() => {
+                  const focusCrime = story.original_metadata?.story_annotations?.["Focus on crime or quasi-crime"] || '';
+                  const crimeTypes = story.original_metadata?.story_annotations?.["Types of qrimes"] || '';
+                  const crimes = [focusCrime, crimeTypes].filter(crime => crime).join(', ');
+                  return crimes || 'Unknown';
+                })()}</div>
               </div>
               <div className="metadata-item">
-                <div className="metadata-label">Reveal Length</div>
-                <div className="metadata-value">{formatNumber(story.metadata?.reveal_length || 0)} characters</div>
+                <div className="metadata-label">Crime trajectory</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Crime trajectory"] || 'Unknown'}</div>
               </div>
               <div className="metadata-item">
-                <div className="metadata-label">Model Used</div>
-                <div className="metadata-value">{story.metadata?.model || 'Unknown'}</div>
+                <div className="metadata-label">Motives</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Motives"] || 'Unknown'}</div>
               </div>
               <div className="metadata-item">
-                <div className="metadata-label">Solvable</div>
-                <div className="metadata-value">
-                  <span className={`tag ${story.original_metadata?.is_solvable ? 'solvable' : 'unsolvable'}`}>
-                    {story.original_metadata?.is_solvable ? 'Yes' : 'No'}
-                  </span>
-                </div>
+                <div className="metadata-label">Means (murder only)</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Means (murder only)"] || 'N/A'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Correct annotator guess?</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Correct annotator guess?"] || 'Unknown'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Types of clues</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Types of clues"] || 'Unknown'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Essential clue</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Essential clue"] || 'Unknown'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Most salient clue</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Most salient clue"] || 'Unknown'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Presence of planted or fabricated evidence</div>
+                <div className="metadata-value">{story.original_metadata?.story_annotations?.["Presence of planted or fabricated evidence"] || 'None'}</div>
+              </div>
+              <div className="metadata-item">
+                <div className="metadata-label">Recommend?</div>
+                <div className="metadata-value">{(() => {
+                  const recommendToFriend = story.original_metadata?.story_annotations?.["Recommend to friend?"] || '';
+                  const satisfaction = story.original_metadata?.story_annotations?.["How satisfying as detective fiction?"] || '';
+                  const recommendation = [recommendToFriend, satisfaction].filter(rec => rec).join(' - ');
+                  return recommendation || 'Unknown';
+                })()}</div>
               </div>
             </div>
 

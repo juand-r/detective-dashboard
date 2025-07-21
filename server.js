@@ -39,6 +39,9 @@ app.get('/api/stories', (req, res) => {
       // Extract story code from filename (part before first underscore)
       const storyCode = data.original_metadata?.story_code || data.metadata.event_name;
       
+      // Extract publication date
+      const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+      
       // Try to read corresponding summary file
       let storySummary = null;
       try {
@@ -62,7 +65,8 @@ app.get('/api/stories', (req, res) => {
         textLength: data.metadata.story_length,
         isSolvable: data.original_metadata?.is_solvable || true,
         model: data.metadata.model,
-        storySummary: storySummary
+        storySummary: storySummary,
+        publicationDate: publicationDate
       };
     });
     
@@ -130,6 +134,9 @@ app.get('/api/search', (req, res) => {
       // Extract story code from filename (part before first underscore)
       const storyCode = data.original_metadata?.story_code || data.metadata.event_name;
       
+      // Extract publication date
+      const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+      
       // Try to read corresponding summary file
       let storySummary = null;
       try {
@@ -154,7 +161,8 @@ app.get('/api/search', (req, res) => {
         isSolvable: data.original_metadata?.is_solvable || true,
         model: data.metadata.model,
         storySummary: storySummary,
-        fullData: data
+        fullData: data,
+        publicationDate: publicationDate
       };
     });
     

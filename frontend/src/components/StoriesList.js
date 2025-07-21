@@ -156,7 +156,11 @@ const StoriesList = () => {
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div className="story-card">
-                <h3 className="story-title">{story.storyTitle}</h3>
+                <h3 className="story-title">{(() => {
+                  const baseTitle = story.storyTitle;
+                  const pubDate = story.publicationDate;
+                  return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
+                })()}</h3>
                 <div className="story-author">by {story.author}</div>
                 
                 <div className="story-meta">
