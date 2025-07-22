@@ -19,6 +19,32 @@ const DETECTIVE_SOLUTIONS_DIR = path.join(__dirname, 'data');
 const SUMMARIES_DIR = path.join(__dirname, 'summaries-concat-1k-v0');
 // Path to v2 solutions directory
 const DETECTIVE_SOLUTIONS_V2_DIR = path.join(__dirname, 'detective_solutions-o3-given-reveal');
+// Path to user annotations file
+const USER_ANNOTATIONS_FILE = path.join(__dirname, 'user_annotations.json');
+
+// Helper function to load user annotations
+function loadUserAnnotations() {
+  try {
+    if (fs.existsSync(USER_ANNOTATIONS_FILE)) {
+      const data = fs.readFileSync(USER_ANNOTATIONS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading user annotations:', error);
+  }
+  return {};
+}
+
+// Helper function to save user annotations
+function saveUserAnnotations(annotations) {
+  try {
+    fs.writeFileSync(USER_ANNOTATIONS_FILE, JSON.stringify(annotations, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving user annotations:', error);
+    return false;
+  }
+}
 
 // API endpoint to get all detective solution metadata
 app.get('/api/stories', (req, res) => {
@@ -265,6 +291,139 @@ app.get('/api/authors', (req, res) => {
   } catch (error) {
     console.error('Error reading authors:', error);
     res.status(500).json({ error: 'Failed to read authors' });
+  }
+});
+
+// API endpoint for stats table data
+app.get('/api/stats', (req, res) => {
+  try {
+    const userAnnotations = loadUserAnnotations();
+    const statsData = [];
+    
+    // Read all detective solution files
+    const files = fs.readdirSync(DETECTIVE_SOLUTIONS_DIR);
+    const jsonFiles = files.filter(file => file.endsWith('_detective_solution.json'));
+
+    jsonFiles.forEach(filename => {
+      try {
+        const filePath = path.join(DETECTIVE_SOLUTIONS_DIR, filename);
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        // Extract basic info
+        const storyId = data.metadata.event_name;
+        const storyTitle = data.original_metadata?.story_annotations?.["Story Title"] || 'Unknown';
+        const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+        const displayTitle = publicationDate ? `${storyTitle} (${publicationDate})` : storyTitle;
+        
+        const correctAnnotatorGuess = data.original_metadata?.story_annotations?.["Correct annotator guess?"] || 'Unknown';
+        
+        // Convert character length to words (rough estimate)
+        const storyLengthWords = Math.round((data.metadata.story_length || 0) / 5); // ~5 chars per word
+        
+        // Parse Solution v2 for culprits and accomplices
+        let o3GoldCulprits = '';
+        let o3GoldAccomplices = '';
+        
+        try {
+          const v2FileName = `${storyId}_detective_solution.json`;
+          const v2FilePath = path.join(DETECTIVE_SOLUTIONS_V2_DIR, v2FileName);
+          if (fs.existsSync(v2FilePath)) {
+            const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+            const solutionText = v2Data.detection?.solution || '';
+            
+            // Extract MAIN CULPRIT(S) and ACCOMPLICE(S)
+            const culpritMatch = solutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+            const accompliceMatch = solutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+            
+            o3GoldCulprits = culpritMatch ? culpritMatch[1].trim() : '';
+            o3GoldAccomplices = accompliceMatch ? accompliceMatch[1].trim() : '';
+          }
+        } catch (error) {
+          console.log(`Warning: Could not parse v2 solution for ${storyId}:`, error.message);
+        }
+        
+        // Calculate pre-reveal word count
+        let preRevealWords = 0;
+        try {
+          const fullText = data.story?.full_text || '';
+          const borderSentence = data.metadata?.border_sentence || '';
+          if (borderSentence && fullText.includes(borderSentence)) {
+            const preRevealText = fullText.split(borderSentence)[0];
+            preRevealWords = preRevealText.split(' ').length;
+          } else {
+            preRevealWords = storyLengthWords; // If no border sentence, use full length
+          }
+        } catch (error) {
+          preRevealWords = storyLengthWords;
+        }
+        
+        // Get user annotations for this story
+        const storyAnnotations = userAnnotations[storyId] || {};
+        
+        statsData.push({
+          storyId,
+          storyTitle: displayTitle,
+          correctAnnotatorGuess,
+          storyLengthWords,
+          o3GoldCulprits,
+          o3GoldAccomplices,
+          preRevealWords,
+          // User annotations
+          oracleCulpritGuess: storyAnnotations.oracleCulpritGuess || '',
+          oracleAccompliceGuess: storyAnnotations.oracleAccompliceGuess || '',
+          culpritCorrect: storyAnnotations.culpritCorrect || '',
+          accompliceCorrect: storyAnnotations.accompliceCorrect || '',
+          concatCulpritGuess: storyAnnotations.concatCulpritGuess || '',
+          concatAccompliceGuess: storyAnnotations.concatAccompliceGuess || '',
+          concatCulpritCorrect: storyAnnotations.concatCulpritCorrect || '',
+          concatAccompliceCorrect: storyAnnotations.concatAccompliceCorrect || '',
+          concatPreRevealWords: storyAnnotations.concatPreRevealWords || preRevealWords
+        });
+      } catch (error) {
+        console.error(`Error processing ${filename}:`, error);
+      }
+    });
+    
+    res.json(statsData);
+  } catch (error) {
+    console.error('Error generating stats data:', error);
+    res.status(500).json({ error: 'Failed to generate stats data' });
+  }
+});
+
+// API endpoint to save user annotation
+app.post('/api/annotations/:storyId', (req, res) => {
+  try {
+    const { storyId } = req.params;
+    const { field, value } = req.body;
+    
+    const userAnnotations = loadUserAnnotations();
+    
+    if (!userAnnotations[storyId]) {
+      userAnnotations[storyId] = {};
+    }
+    
+    userAnnotations[storyId][field] = value;
+    
+    if (saveUserAnnotations(userAnnotations)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save annotation' });
+    }
+  } catch (error) {
+    console.error('Error saving annotation:', error);
+    res.status(500).json({ error: 'Failed to save annotation' });
+  }
+});
+
+// API endpoint to get user annotations
+app.get('/api/annotations', (req, res) => {
+  try {
+    const userAnnotations = loadUserAnnotations();
+    res.json(userAnnotations);
+  } catch (error) {
+    console.error('Error loading annotations:', error);
+    res.status(500).json({ error: 'Failed to load annotations' });
   }
 });
 

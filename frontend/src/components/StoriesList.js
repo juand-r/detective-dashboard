@@ -99,8 +99,26 @@ const StoriesList = () => {
     <div>
       <header className="header">
         <div className="container">
-          <h1>Detective Solutions Dashboard</h1>
-          <p>Explore and analyze detective stories and their solutions</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1>Detective Solutions Dashboard</h1>
+              <p>Explore and analyze detective stories and their solutions</p>
+            </div>
+            <Link 
+              to="/stats"
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#667eea',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              Story Stats
+            </Link>
+          </div>
         </div>
       </header>
 
