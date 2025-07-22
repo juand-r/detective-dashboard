@@ -92,17 +92,36 @@ function StoryDetail() {
     <div>
       <header className="header">
         <div className="container">
-          <h1>{(() => {
-            const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
-            const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
-            return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
-          })()}</h1>
-          <p>by {(() => {
-            const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-            const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
-            const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
-            return author;
-          })()}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1>{(() => {
+                const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+                const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
+                return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
+              })()}</h1>
+              <p>by {(() => {
+                const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+                const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
+                const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+                return author;
+              })()}</p>
+            </div>
+            <button 
+              onClick={() => navigate('/stats')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                fontSize: '0.875rem',
+                cursor: 'pointer'
+              }}
+            >
+              Story Stats
+            </button>
+          </div>
         </div>
       </header>
 

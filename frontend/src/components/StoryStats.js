@@ -262,7 +262,9 @@ const StoryStats = () => {
 
         {/* Table */}
         <div style={{ 
-          overflowX: 'auto', 
+          overflowX: 'auto',
+          overflowY: 'auto', 
+          maxHeight: '70vh',
           border: '1px solid #e5e7eb', 
           borderRadius: '8px',
           backgroundColor: 'white'
@@ -272,7 +274,11 @@ const StoryStats = () => {
             borderCollapse: 'collapse',
             fontSize: '0.875rem'
           }}>
-            <thead>
+            <thead style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 10
+            }}>
               <tr>
                 {Object.entries(columnGroups).map(([groupKey, group]) => 
                   group.columns.filter(col => visibleColumns[col]).map((columnKey, index) => {
@@ -283,7 +289,7 @@ const StoryStats = () => {
                     return (
                       <th key={columnKey} style={{
                         padding: '0.75rem 0.5rem',
-                        backgroundColor: group.color,
+                        backgroundColor: columnKey === 'storyId' || columnKey === 'storyTitle' ? '#f0f9ff' : group.color,
                         borderBottom: '2px solid #d1d5db',
                         borderRight: isLastGroup ? 'none' : 
                                    isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #d1d5db',
@@ -291,6 +297,10 @@ const StoryStats = () => {
                         fontWeight: '600',
                         fontSize: '0.75rem',
                         whiteSpace: 'nowrap',
+                        position: columnKey === 'storyId' || columnKey === 'storyTitle' ? 'sticky' : 'static',
+                        left: columnKey === 'storyId' ? 0 : 
+                              columnKey === 'storyTitle' ? '60px' : 'auto',
+                        zIndex: columnKey === 'storyId' || columnKey === 'storyTitle' ? 20 : 'auto',
                         minWidth: columnKey === 'storyId' ? '60px' : 
                                   columnKey === 'storyTitle' ? '200px' : 
                                   columnKey.includes('Words') || columnKey.includes('words') ? '80px' :
@@ -321,7 +331,13 @@ const StoryStats = () => {
                           borderRight: isLastGroup ? 'none' : 
                                      isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #e5e7eb',
                           verticalAlign: 'top',
-                          fontSize: '0.75rem'
+                          fontSize: '0.75rem',
+                          position: columnKey === 'storyId' || columnKey === 'storyTitle' ? 'sticky' : 'static',
+                          left: columnKey === 'storyId' ? 0 : 
+                                columnKey === 'storyTitle' ? '60px' : 'auto',
+                          zIndex: columnKey === 'storyId' || columnKey === 'storyTitle' ? 15 : 'auto',
+                          backgroundColor: columnKey === 'storyId' || columnKey === 'storyTitle' ? '#f0f9ff' : 
+                                         (rowIndex % 2 === 0 ? '#f9fafb' : 'white')
                         }}>
                           {columnKey === 'culpritCorrect' || columnKey === 'accompliceCorrect' || 
                            columnKey === 'concatCulpritCorrect' || columnKey === 'concatAccompliceCorrect' ? (
@@ -344,11 +360,20 @@ const StoryStats = () => {
                           ) : columnKey === 'storyTitle' ? (
                             <div style={{ 
                               maxWidth: '200px', 
-                              wordWrap: 'break-word',
-                              color: story.correctAnnotatorGuess === 'No' ? '#dc2626' : 'inherit',
-                              fontWeight: story.correctAnnotatorGuess === 'No' ? '600' : 'normal'
+                              wordWrap: 'break-word'
                             }}>
-                              {story[columnKey]}
+                              <Link 
+                                to={`/story/${story.storyId}`}
+                                style={{ 
+                                  color: story.correctAnnotatorGuess === 'No' ? '#dc2626' : '#1f2937',
+                                  fontWeight: story.correctAnnotatorGuess === 'No' ? '600' : 'normal',
+                                  textDecoration: 'none'
+                                }}
+                                onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                                onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                              >
+                                {story[columnKey]}
+                              </Link>
                             </div>
                           ) : (
                             <div style={{ 
