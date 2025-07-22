@@ -1,6 +1,6 @@
 {
   "name": "detective-solutions-dashboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dashboard for viewing detective story solutions and metadata",
   "main": "server.js",
   "scripts": {

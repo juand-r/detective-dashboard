@@ -28,10 +28,6 @@ const StoryDetail = () => {
     fetchStory();
   }, [id]);
 
-  const formatNumber = (num) => {
-    return new Intl.NumberFormat().format(num);
-  };
-
   const formatSolution = (solution) => {
     if (!solution) return 'No solution available';
     
