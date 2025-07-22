@@ -2,6 +2,7 @@
 
 A modern web dashboard for browsing and analyzing detective stories and their AI-generated solutions.
 
+
 ## Features
 
 - **Story Browser**: Browse through all detective stories with search and filtering
