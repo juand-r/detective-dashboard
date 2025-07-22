@@ -326,20 +326,6 @@ function StoryDetail() {
                   Story Text
                 </button>
                 <button
-                  onClick={() => setActiveTab('reveal')}
-                  style={{
-                    padding: '1rem 2rem',
-                    border: 'none',
-                    background: activeTab === 'reveal' ? '#667eea' : 'transparent',
-                    color: activeTab === 'reveal' ? 'white' : '#4a5568',
-                    cursor: 'pointer',
-                    borderRadius: '8px 8px 0 0',
-                    fontWeight: activeTab === 'reveal' ? '600' : 'normal'
-                  }}
-                >
-                  Reveal Segment
-                </button>
-                <button
                   onClick={() => setActiveTab('solution')}
                   style={{
                     padding: '1rem 2rem',
@@ -391,19 +377,50 @@ function StoryDetail() {
                 <div className="story-content" style={{ lineHeight: '1.8' }}>
                   {story.story?.full_text || 'No story text available'}
                 </div>
-              </div>
-            )}
 
-            {activeTab === 'reveal' && (
-              <div>
-                <div className="section-title">Reveal Segment</div>
-                {story.metadata?.border_sentence && (
-                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#e2e8f0', borderRadius: '8px' }}>
-                    <strong>Border sentence:</strong> "{story.metadata.border_sentence}"
+                {/* Reveal Segment Collapsible Section */}
+                <div style={{ marginTop: '2rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <div 
+                    onClick={() => toggleSection('reveal-segment')}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: '#f8fafc',
+                      borderBottom: collapsedSections['reveal-segment'] ? 'none' : '1px solid #e2e8f0',
+                      borderRadius: collapsedSections['reveal-segment'] ? '8px' : '8px 8px 0 0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontWeight: '600',
+                      color: '#2d3748',
+                      userSelect: 'none'
+                    }}
+                  >
+                    <span>Reveal Segment</span>
+                    <span style={{ 
+                      transform: collapsedSections['reveal-segment'] ? 'rotate(0deg)' : 'rotate(90deg)',
+                      transition: 'transform 0.2s ease',
+                      fontSize: '1.2rem'
+                    }}>
+                      ▶
+                    </span>
                   </div>
-                )}
-                <div className="story-text">
-                  {story.story?.reveal_segment || 'No reveal segment available'}
+                  {!collapsedSections['reveal-segment'] && (
+                    <div style={{ 
+                      padding: '1.5rem',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '0 0 8px 8px'
+                    }}>
+                      {story.metadata?.border_sentence && (
+                        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#e2e8f0', borderRadius: '8px' }}>
+                          <strong>Border sentence:</strong> "{story.metadata.border_sentence}"
+                        </div>
+                      )}
+                      <div style={{ lineHeight: '1.8' }}>
+                        {story.story?.reveal_segment || 'No reveal segment available'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
