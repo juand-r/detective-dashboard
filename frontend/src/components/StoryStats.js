@@ -6,8 +6,7 @@ const StoryStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState({
-    // Base columns
-    storyId: true,
+    // Base columns (ID is always visible, not toggleable)
     storyTitle: true,
     storyLengthWords: true,
     o3GoldCulprits: true,
@@ -88,15 +87,44 @@ const StoryStats = () => {
     }));
   };
 
+  const toggleGroupColumns = (groupKey) => {
+    const group = columnGroups[groupKey];
+    const allVisible = group.columns.every(col => visibleColumns[col]);
+    
+    setVisibleColumns(prev => {
+      const updated = { ...prev };
+      group.columns.forEach(col => {
+        updated[col] = !allVisible;
+      });
+      return updated;
+    });
+  };
+
   const exportToCSV = () => {
-    // Get headers in the same order as the table display
-    const orderedHeaders = [];
+    // Always include storyId as first column, then get other headers in display order
+    const orderedHeaders = ['storyId'];
     Object.entries(columnGroups).forEach(([groupKey, group]) => {
       group.columns.forEach(columnKey => {
         if (visibleColumns[columnKey]) {
           orderedHeaders.push(columnKey);
         }
       });
+    });
+
+    // Create aggregate row data
+    const aggregateRow = {};
+    orderedHeaders.forEach(columnKey => {
+      if (columnKey === 'storyId') {
+        aggregateRow[columnKey] = 'Avg.';
+      } else if (columnKey === 'storyLengthWords' || columnKey === 'preRevealWords' || columnKey === 'concatPreRevealWords') {
+        const values = statsData.map(story => parseInt(story[columnKey]) || 0).filter(val => val > 0);
+        const avg = values.length > 0 ? Math.round(values.reduce((sum, val) => sum + val, 0) / values.length) : 0;
+        aggregateRow[columnKey] = avg;
+      } else if (columnKey === 'storyTitle') {
+        aggregateRow[columnKey] = `${statsData.length} stories`;
+      } else {
+        aggregateRow[columnKey] = '—'; // Em dash for non-applicable fields
+      }
     });
 
     // Create properly escaped CSV content
@@ -121,7 +149,24 @@ const StoryStats = () => {
           
           return value;
         }).join(',')
-      )
+      ),
+      // Add aggregate row
+      orderedHeaders.map(header => {
+        let value = aggregateRow[header] || '';
+        
+        // Convert to string and handle special cases
+        value = String(value);
+        
+        // Clean up multi-line text - replace line breaks with spaces
+        value = value.replace(/[\r\n]+/g, ' ').trim();
+        
+        // Escape CSV special characters
+        if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+          value = `"${value.replace(/"/g, '""')}"`;
+        }
+        
+        return value;
+      }).join(',')
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -169,7 +214,7 @@ const StoryStats = () => {
     base: {
       title: 'Basic Information',
       color: '#f0f9ff', // light blue
-      columns: ['storyId', 'storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
+      columns: ['storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
     },
     oracle: {
       title: 'Oracle (Full Story)',
@@ -238,7 +283,26 @@ const StoryStats = () => {
                 borderRadius: '8px',
                 border: '1px solid #e5e7eb'
               }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>{group.title}</h4>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', marginRight: '0.5rem' }}>{group.title}</h4>
+                  {(groupKey === 'oracle' || groupKey === 'concat') && (
+                    <button
+                      onClick={() => toggleGroupColumns(groupKey)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #6b7280',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        color: '#6b7280'
+                      }}
+                      title={group.columns.every(col => visibleColumns[col]) ? 'Hide all columns' : 'Show all columns'}
+                    >
+                      {group.columns.every(col => visibleColumns[col]) ? '✓' : '○'}
+                    </button>
+                  )}
+                </div>
                 {group.columns.map(columnKey => (
                   <label key={columnKey} style={{ 
                     display: 'block', 
@@ -280,6 +344,25 @@ const StoryStats = () => {
               zIndex: 10
             }}>
               <tr>
+                {/* Always show Story ID column first */}
+                <th key="storyId" style={{
+                  padding: '0.75rem 0.5rem',
+                  backgroundColor: '#f0f9ff',
+                  borderBottom: '2px solid #d1d5db',
+                  borderRight: '1px solid #d1d5db',
+                  textAlign: 'left',
+                  fontWeight: '600',
+                  fontSize: '0.75rem',
+                  whiteSpace: 'nowrap',
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 20,
+                  minWidth: '60px'
+                }}>
+                  {columnLabels.storyId}
+                </th>
+                
+                {/* Then show other visible columns */}
                 {Object.entries(columnGroups).map(([groupKey, group]) => 
                   group.columns.filter(col => visibleColumns[col]).map((columnKey, index) => {
                     const visibleColumnsInGroup = group.columns.filter(col => visibleColumns[col]);
@@ -289,7 +372,7 @@ const StoryStats = () => {
                     return (
                       <th key={columnKey} style={{
                         padding: '0.75rem 0.5rem',
-                        backgroundColor: columnKey === 'storyId' || columnKey === 'storyTitle' ? '#f0f9ff' : group.color,
+                        backgroundColor: columnKey === 'storyTitle' ? '#f0f9ff' : group.color,
                         borderBottom: '2px solid #d1d5db',
                         borderRight: isLastGroup ? 'none' : 
                                    isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #d1d5db',
@@ -297,12 +380,10 @@ const StoryStats = () => {
                         fontWeight: '600',
                         fontSize: '0.75rem',
                         whiteSpace: 'nowrap',
-                        position: columnKey === 'storyId' || columnKey === 'storyTitle' ? 'sticky' : 'static',
-                        left: columnKey === 'storyId' ? 0 : 
-                              columnKey === 'storyTitle' ? '60px' : 'auto',
-                        zIndex: columnKey === 'storyId' || columnKey === 'storyTitle' ? 20 : 'auto',
-                        minWidth: columnKey === 'storyId' ? '60px' : 
-                                  columnKey === 'storyTitle' ? '200px' : 
+                        position: columnKey === 'storyTitle' ? 'sticky' : 'static',
+                        left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                        zIndex: columnKey === 'storyTitle' ? 20 : 'auto',
+                        minWidth: columnKey === 'storyTitle' ? '200px' : 
                                   columnKey.includes('Words') || columnKey.includes('words') ? '80px' :
                                   columnKey.includes('Guess') ? '150px' : '120px'
                       }}>
@@ -318,6 +399,35 @@ const StoryStats = () => {
                 <tr key={story.storyId} style={{
                   backgroundColor: rowIndex % 2 === 0 ? '#f9fafb' : 'white'
                 }}>
+                  {/* Always show Story ID column first */}
+                  <td key="storyId" style={{
+                    padding: '0.5rem',
+                    borderBottom: '1px solid #e5e7eb',
+                    borderRight: '1px solid #e5e7eb',
+                    verticalAlign: 'top',
+                    fontSize: '0.75rem',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 15,
+                    backgroundColor: '#f0f9ff'
+                  }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <Link 
+                        to={`/story/${story.storyId}`}
+                        style={{ 
+                          color: '#1f2937',
+                          textDecoration: 'none',
+                          fontWeight: '500'
+                        }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        {story.storyId}
+                      </Link>
+                    </div>
+                  </td>
+
+                  {/* Then show other visible columns */}
                   {Object.entries(columnGroups).map(([groupKey, group]) => 
                     group.columns.filter(col => visibleColumns[col]).map((columnKey, index) => {
                       const visibleColumnsInGroup = group.columns.filter(col => visibleColumns[col]);
@@ -332,11 +442,10 @@ const StoryStats = () => {
                                      isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #e5e7eb',
                           verticalAlign: 'top',
                           fontSize: '0.75rem',
-                          position: columnKey === 'storyId' || columnKey === 'storyTitle' ? 'sticky' : 'static',
-                          left: columnKey === 'storyId' ? 0 : 
-                                columnKey === 'storyTitle' ? '60px' : 'auto',
-                          zIndex: columnKey === 'storyId' || columnKey === 'storyTitle' ? 15 : 'auto',
-                          backgroundColor: columnKey === 'storyId' || columnKey === 'storyTitle' ? '#f0f9ff' : 
+                          position: columnKey === 'storyTitle' ? 'sticky' : 'static',
+                          left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                          zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
+                          backgroundColor: columnKey === 'storyTitle' ? '#f0f9ff' : 
                                          (rowIndex % 2 === 0 ? '#f9fafb' : 'white')
                         }}>
                           {columnKey === 'culpritCorrect' || columnKey === 'accompliceCorrect' || 
@@ -393,6 +502,72 @@ const StoryStats = () => {
                   )}
                 </tr>
               ))}
+              
+              {/* Aggregate Statistics Row */}
+              <tr style={{ backgroundColor: '#fef3c7' }}>
+                {/* Always show Story ID column first with "Avg." */}
+                <td key="storyId" style={{
+                  padding: '0.5rem',
+                  borderTop: '3px solid #d97706',
+                  borderBottom: '1px solid #e5e7eb',
+                  borderRight: '1px solid #e5e7eb',
+                  verticalAlign: 'top',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 15,
+                  backgroundColor: '#fde68a'
+                }}>
+                  <div style={{ textAlign: 'left' }}>
+                    Avg.
+                  </div>
+                </td>
+
+                {/* Then show other visible columns */}
+                {Object.entries(columnGroups).map(([groupKey, group]) => 
+                  group.columns.filter(col => visibleColumns[col]).map((columnKey, index) => {
+                    const visibleColumnsInGroup = group.columns.filter(col => visibleColumns[col]);
+                    const isLastColumnInGroup = index === visibleColumnsInGroup.length - 1;
+                    const isLastGroup = groupKey === 'concat';
+                    
+                    // Calculate aggregate values
+                    let displayValue = '';
+                    if (columnKey === 'storyLengthWords' || columnKey === 'preRevealWords' || columnKey === 'concatPreRevealWords') {
+                      const values = statsData.map(story => parseInt(story[columnKey]) || 0).filter(val => val > 0);
+                      const avg = values.length > 0 ? Math.round(values.reduce((sum, val) => sum + val, 0) / values.length) : 0;
+                      displayValue = avg.toLocaleString();
+                    } else if (columnKey === 'storyTitle') {
+                      displayValue = `${statsData.length} stories`;
+                    } else {
+                      displayValue = '—'; // Em dash for non-applicable fields
+                    }
+                    
+                    return (
+                      <td key={columnKey} style={{
+                        padding: '0.5rem',
+                        borderTop: '3px solid #d97706', // Thick top border to separate from data
+                        borderBottom: '1px solid #e5e7eb',
+                        borderRight: isLastGroup ? 'none' : 
+                                   isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #e5e7eb',
+                        verticalAlign: 'top',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        position: columnKey === 'storyTitle' ? 'sticky' : 'static',
+                        left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                        zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
+                        backgroundColor: columnKey === 'storyTitle' ? '#fde68a' : '#fef3c7'
+                      }}>
+                        <div style={{ 
+                          textAlign: columnKey.includes('Words') || columnKey.includes('words') ? 'right' : 'left'
+                        }}>
+                          {displayValue}
+                        </div>
+                      </td>
+                    );
+                  })
+                )}
+              </tr>
             </tbody>
           </table>
         </div>

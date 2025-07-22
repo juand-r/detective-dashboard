@@ -69,7 +69,7 @@ const StoriesList = () => {
         <header className="header">
           <div className="container">
             <h1>Detective Solutions Dashboard</h1>
-            <p>Explore and analyze detective stories and their solutions</p>
+            <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
           </div>
         </header>
         <div className="container">
@@ -85,7 +85,7 @@ const StoriesList = () => {
         <header className="header">
           <div className="container">
             <h1>Detective Solutions Dashboard</h1>
-            <p>Explore and analyze detective stories and their solutions</p>
+            <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
           </div>
         </header>
         <div className="container">
@@ -102,7 +102,7 @@ const StoriesList = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1>Detective Solutions Dashboard</h1>
-              <p>Explore and analyze detective stories and their solutions</p>
+              <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
             </div>
             <Link 
               to="/stats"

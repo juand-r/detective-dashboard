@@ -8,7 +8,10 @@ function StoryDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('story');
-  const [collapsedSections, setCollapsedSections] = useState({});
+  const [collapsedSections, setCollapsedSections] = useState({
+    'crime-info': true,  // Crime Information section closed by default
+    'clues-info': true   // Clues section closed by default
+  });
 
   const toggleSection = (sectionName) => {
     setCollapsedSections(prev => ({
@@ -148,15 +151,13 @@ function StoryDetail() {
 
           <div className="story-detail-content">
             {/* Plot Summary */}
-            <div className="plot-summary">
+            <div className="plot-summary" style={{ marginBottom: '1.5rem' }}>
               <div className="section-title">Plot Summary</div>
               <p>{story.original_metadata?.plot_summary || 'No plot summary available.'}</p>
             </div>
 
             {/* Clues & Evidence Section */}
             <div className="clues-evidence-section" style={{ marginBottom: '2rem' }}>
-              <div className="section-title">Story Metadata</div>
-              
               {/* Crime Information Collapsible Pane */}
               <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                 <div 
