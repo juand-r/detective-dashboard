@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const StoryDetail = () => {
+function StoryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('story');
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  const toggleSection = (sectionName) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -275,6 +283,20 @@ const StoryDetail = () => {
                   Solution (o3)
                 </button>
                 <button
+                  onClick={() => setActiveTab('solutionv2')}
+                  style={{
+                    padding: '1rem 2rem',
+                    border: 'none',
+                    background: activeTab === 'solutionv2' ? '#667eea' : 'transparent',
+                    color: activeTab === 'solutionv2' ? 'white' : '#4a5568',
+                    cursor: 'pointer',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: activeTab === 'solutionv2' ? '600' : 'normal'
+                  }}
+                >
+                  Solution v2
+                </button>
+                <button
                   onClick={() => setActiveTab('summary')}
                   style={{
                     padding: '1rem 2rem',
@@ -327,6 +349,118 @@ const StoryDetail = () => {
               </div>
             )}
 
+            {activeTab === 'solutionv2' && (
+              <div>
+                <div className="section-title">Solution v2 (o3-given-reveal)</div>
+                <div className="solution-section">
+                  {story.solutionV2 ? (
+                    <div style={{ lineHeight: '1.8' }}>
+                      {(() => {
+                        const parseStructuredSolution = (solutionText) => {
+                          const sections = [];
+                          const tagPattern = /<([^>]+)>/g;
+                          const parts = solutionText.split(tagPattern);
+                          
+                          let currentSection = null;
+                          let currentContent = '';
+                          
+                          for (let i = 0; i < parts.length; i++) {
+                            const part = parts[i];
+                            
+                            if (i % 2 === 1) { // This is a tag
+                              // Skip closing tags (those that start with /)
+                              if (part.startsWith('/')) {
+                                continue;
+                              }
+                              
+                              // Save previous section if it exists
+                              if (currentSection) {
+                                sections.push({
+                                  title: currentSection,
+                                  content: currentContent.trim()
+                                });
+                              }
+                              
+                              // Start new section
+                              currentSection = part;
+                              currentContent = '';
+                            } else { // This is content
+                              currentContent += part;
+                            }
+                          }
+                          
+                          // Add the last section
+                          if (currentSection && currentContent.trim()) {
+                            sections.push({
+                              title: currentSection,
+                              content: currentContent.trim()
+                            });
+                          }
+                          
+                          return sections;
+                        };
+
+                        const sections = parseStructuredSolution(story.solutionV2);
+                        
+                        return (
+                          <div>
+                            {sections.map((section, index) => (
+                              <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                <div 
+                                  onClick={() => toggleSection(`v2-${index}`)}
+                                  style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#f8fafc',
+                                    borderBottom: collapsedSections[`v2-${index}`] ? 'none' : '1px solid #e2e8f0',
+                                    borderRadius: collapsedSections[`v2-${index}`] ? '8px' : '8px 8px 0 0',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    fontWeight: '600',
+                                    color: '#2d3748',
+                                    userSelect: 'none'
+                                  }}
+                                >
+                                  <span>{section.title}</span>
+                                  <span style={{ 
+                                    transform: collapsedSections[`v2-${index}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                    transition: 'transform 0.2s ease',
+                                    fontSize: '1.2rem'
+                                  }}>
+                                    ▶
+                                  </span>
+                                </div>
+                                {!collapsedSections[`v2-${index}`] && (
+                                  <div style={{ 
+                                    padding: '1rem',
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '0 0 8px 8px'
+                                  }}>
+                                    <p style={{ 
+                                      margin: 0,
+                                      whiteSpace: 'pre-wrap',
+                                      color: '#4a5568'
+                                    }}>
+                                      {section.content}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                      No Solution v2 data available for this story.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'summary' && (
               <div>
                 <div className="section-title">Summary (concat-1kwords-v0)</div>
@@ -352,6 +486,6 @@ const StoryDetail = () => {
       </div>
     </div>
   );
-};
+}
 
 export default StoryDetail; 

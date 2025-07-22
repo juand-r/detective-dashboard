@@ -17,6 +17,8 @@ app.use(express.static(path.join(__dirname, 'frontend/build')));
 const DETECTIVE_SOLUTIONS_DIR = path.join(__dirname, 'data');
 // Path to summaries directory
 const SUMMARIES_DIR = path.join(__dirname, 'summaries-concat-1k-v0');
+// Path to v2 solutions directory
+const DETECTIVE_SOLUTIONS_V2_DIR = path.join(__dirname, 'detective_solutions-o3-given-reveal');
 
 // API endpoint to get all detective solution metadata
 app.get('/api/stories', (req, res) => {
@@ -54,6 +56,19 @@ app.get('/api/stories', (req, res) => {
       } catch (error) {
         console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
       }
+
+      // Try to read corresponding v2 solution file
+      let solutionV2 = null;
+      try {
+        const v2FileName = `${storyCode}_detective_solution.json`;
+        const v2FilePath = path.join(DETECTIVE_SOLUTIONS_V2_DIR, v2FileName);
+        if (fs.existsSync(v2FilePath)) {
+          const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+          solutionV2 = v2Data.detection?.solution || null;
+        }
+      } catch (error) {
+        console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+      }
       
       return {
         id: data.metadata.event_name,
@@ -66,7 +81,8 @@ app.get('/api/stories', (req, res) => {
         isSolvable: data.original_metadata?.is_solvable || true,
         model: data.metadata.model,
         storySummary: storySummary,
-        publicationDate: publicationDate
+        publicationDate: publicationDate,
+        solutionV2: solutionV2
       };
     });
     
@@ -103,6 +119,19 @@ app.get('/api/stories/:id', (req, res) => {
     } catch (error) {
       console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
       data.storySummary = null;
+    }
+
+    // Try to add corresponding v2 solution data
+    try {
+      const v2FileName = `${storyCode}_detective_solution.json`;
+      const v2FilePath = path.join(DETECTIVE_SOLUTIONS_V2_DIR, v2FileName);
+      if (fs.existsSync(v2FilePath)) {
+        const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+        data.solutionV2 = v2Data.detection?.solution || null;
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+      data.solutionV2 = null;
     }
     
     res.json(data);
@@ -149,6 +178,19 @@ app.get('/api/search', (req, res) => {
       } catch (error) {
         console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
       }
+
+      // Try to read corresponding v2 solution file
+      let solutionV2 = null;
+      try {
+        const v2FileName = `${storyCode}_detective_solution.json`;
+        const v2FilePath = path.join(DETECTIVE_SOLUTIONS_V2_DIR, v2FileName);
+        if (fs.existsSync(v2FilePath)) {
+          const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+          solutionV2 = v2Data.detection?.solution || null;
+        }
+      } catch (error) {
+        console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+      }
       
       return {
         id: data.metadata.event_name,
@@ -162,7 +204,8 @@ app.get('/api/search', (req, res) => {
         model: data.metadata.model,
         storySummary: storySummary,
         fullData: data,
-        publicationDate: publicationDate
+        publicationDate: publicationDate,
+        solutionV2: solutionV2
       };
     });
     
