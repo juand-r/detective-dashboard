@@ -611,16 +611,6 @@ function StoryStats() {
 
               {/* Count rows for each dropdown option */}
               {dropdownOptions.map(option => {
-                // Calculate counts for this option across all dropdown fields
-                const getCountForOption = (option) => {
-                  const dropdownFields = ['culpritCorrect', 'accompliceCorrect', 'concatCulpritCorrect', 'concatAccompliceCorrect'];
-                  return statsData.reduce((count, story) => {
-                    return count + dropdownFields.filter(field => story[field] === option).length;
-                  }, 0);
-                };
-
-                const count = getCountForOption(option);
-
                 return (
                   <tr key={`count-${option}`} style={{ backgroundColor: '#fef3c7' }}>
                     {/* Story ID column with count label */}
