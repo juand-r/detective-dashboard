@@ -379,6 +379,29 @@ app.get('/api/stats', (req, res) => {
         } catch (error) {
           console.log(`Warning: Could not parse without-reveal solution for ${storyId}:`, error.message);
         }
+
+        // Parse custom-bmds solution for concat guesses
+        let concatCulpritGuess = '';
+        let concatAccompliceGuess = '';
+        
+        try {
+          const customBmdsDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-600-900-words-v2');
+          const customBmdsFileName = `${storyId}_detective_solution.json`;
+          const customBmdsFilePath = path.join(customBmdsDir, customBmdsFileName);
+          if (fs.existsSync(customBmdsFilePath)) {
+            const customBmdsData = JSON.parse(fs.readFileSync(customBmdsFilePath, 'utf8'));
+            const customBmdsSolutionText = customBmdsData.detection?.solution || '';
+            
+            // Extract MAIN CULPRIT(S) and ACCOMPLICE(S) from custom-bmds
+            const customBmdsCulpritMatch = customBmdsSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+            const customBmdsAccompliceMatch = customBmdsSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+            
+            concatCulpritGuess = customBmdsCulpritMatch ? customBmdsCulpritMatch[1].trim() : '';
+            concatAccompliceGuess = customBmdsAccompliceMatch ? customBmdsAccompliceMatch[1].trim() : '';
+          }
+        } catch (error) {
+          console.log(`Warning: Could not parse custom-bmds solution for ${storyId}:`, error.message);
+        }
         
         // Calculate pre-reveal word count
         let preRevealWords = 0;
@@ -411,8 +434,8 @@ app.get('/api/stats', (req, res) => {
           oracleAccompliceGuess: oracleAccompliceGuess,
           culpritCorrect: storyAnnotations.culpritCorrect || '',
           accompliceCorrect: storyAnnotations.accompliceCorrect || '',
-          concatCulpritGuess: storyAnnotations.concatCulpritGuess || '',
-          concatAccompliceGuess: storyAnnotations.concatAccompliceGuess || '',
+          concatCulpritGuess: concatCulpritGuess,
+          concatAccompliceGuess: concatAccompliceGuess,
           concatCulpritCorrect: storyAnnotations.concatCulpritCorrect || '',
           concatAccompliceCorrect: storyAnnotations.concatAccompliceCorrect || '',
           concatPreRevealWords: storyAnnotations.concatPreRevealWords || preRevealWords
@@ -771,6 +794,30 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
           } catch (error) {
             console.log(`Warning: Could not read without-reveal solution for ${storyCode}:`, error.message);
           }
+
+          // Try to read custom-bmds solution file for concat data
+          let concatCulpritGuess = '';
+          let concatAccompliceGuess = '';
+          try {
+            const customBmdsDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-600-900-words-v2');
+            const customBmdsFileName = `${storyCode}_detective_solution.json`;
+            const customBmdsFilePath = path.join(customBmdsDir, customBmdsFileName);
+            if (fs.existsSync(customBmdsFilePath)) {
+              const customBmdsData = JSON.parse(fs.readFileSync(customBmdsFilePath, 'utf8'));
+              const customBmdsSolutionText = customBmdsData.detection?.solution;
+              
+              // Parse culprits and accomplices from the structured response
+              if (typeof customBmdsSolutionText === 'string') {
+                const customBmdsCulpritMatch = customBmdsSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                const customBmdsAccompliceMatch = customBmdsSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                
+                concatCulpritGuess = customBmdsCulpritMatch ? customBmdsCulpritMatch[1].trim() : '';
+                concatAccompliceGuess = customBmdsAccompliceMatch ? customBmdsAccompliceMatch[1].trim() : '';
+              }
+            }
+          } catch (error) {
+            console.log(`Warning: Could not read custom-bmds solution for ${storyCode}:`, error.message);
+          }
           
           // Try to read summary file for additional data
           let summaryData = null;
@@ -806,9 +853,9 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
             culpritCorrect: storyAnnotations.culpritCorrect || '',
             accompliceCorrect: storyAnnotations.accompliceCorrect || '',
             preRevealWords: preRevealWords,
-            // Concat+prompt data (placeholder - would need actual concat responses)
-            concatCulpritGuess: summaryData?.concat_culprit_guess || '',
-            concatAccompliceGuess: summaryData?.concat_accomplice_guess || '',
+            // Concat+prompt data from custom-bmds files
+            concatCulpritGuess: concatCulpritGuess,
+            concatAccompliceGuess: concatAccompliceGuess,
             concatCulpritCorrect: storyAnnotations.concatCulpritCorrect || '',
             concatAccompliceCorrect: storyAnnotations.concatAccompliceCorrect || '',
             concatPreRevealWords: preRevealWords, // Same as preRevealWords for now
