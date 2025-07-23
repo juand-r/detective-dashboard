@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "event_name": "CASE002",
+    "event_description": "The Downtown Art Gallery Heist - High-value paintings stolen",
+    "model": "detective-ai-v2",
+    "story_length": "2200",
+    "reveal_length": "380",
+    "border_sentence": "Detective Chen examined the security system logs one more time."
+  },
+  "story": {
+    "full_text": "The Meridian Art Gallery's security alarm pierced the quiet downtown street at 3:22 AM on a moonless Tuesday night. By the time patrol officers arrived seven minutes later, the thieves had vanished, leaving behind only broken glass and empty frames.\n\nThree priceless paintings were missing: a Van Gogh worth $2.3 million, a Picasso valued at $1.8 million, and a lesser-known but significant Monet piece worth $900,000. The total loss exceeded $5 million.\n\nGallery owner Elena Vasquez was devastated. 'These weren't just paintings,' she told Detective Lisa Chen the next morning. 'They were part of our city's cultural heritage, on loan from the Metropolitan Museum.'\n\nThe crime scene revealed several important clues. The thieves had disabled the motion sensors with professional precision, suggesting inside knowledge of the security system. However, they had overlooked the backup cameras hidden in the decorative molding.\n\nThe footage showed two figures in dark clothing working methodically. One appeared to be female, based on build and movement patterns, while the other was clearly male, tall and athletic. They communicated through hand signals, indicating prior planning and possible military or professional training.\n\nMore intriguingly, the female suspect paused before a fourth painting – a relatively inexpensive local artist's work – and seemed to study it carefully before moving on. This suggested personal knowledge of art, not just monetary motivation.\n\nDetective Chen's investigation revealed that only five people had access to the complete security system specifications: Elena Vasquez herself, head of security Marcus Webb, night guard Tommy Morrison, the gallery's insurance adjuster Patricia Holmes, and recently hired art consultant Amanda Rivers.\n\nDetective Chen examined the security system logs one more time. The motion sensors had been disabled using the master override code, which was changed monthly and known only to management. The timestamp showed the override occurred at exactly 3:15 AM, seven minutes before the alarm was triggered when the thieves broke the glass.\n\nAmanda Rivers, the newest employee, had called in sick that night – her first absence since being hired two months ago. Her boyfriend, Derek Nash, was a former Army ranger with the exact skill set needed for the break-in. When police searched Rivers' apartment, they found the missing paintings hidden in her bedroom closet, along with detailed floor plans of the gallery and photos of the security system control panel.",
+    "reveal_segment": "Detective Chen examined the security system logs one more time. The motion sensors had been disabled using the master override code, which was changed monthly and known only to management. The timestamp showed the override occurred at exactly 3:15 AM, seven minutes before the alarm was triggered when the thieves broke the glass.\n\nAmanda Rivers, the newest employee, had called in sick that night – her first absence since being hired two months ago. Her boyfriend, Derek Nash, was a former Army ranger with the exact skill set needed for the break-in. When police searched Rivers' apartment, they found the missing paintings hidden in her bedroom closet, along with detailed floor plans of the gallery and photos of the security system control panel.",
+    "border_sentence": "Detective Chen examined the security system logs one more time."
+  },
+  "detection": {
+    "solution": "<CASE_ANALYSIS>\nClassic inside job with professional execution. The perpetrators had detailed knowledge of security systems and access to override codes.\n</CASE_ANALYSIS>\n\n<PRIMARY_EVIDENCE>\n1. Security system disabled using master override code\n2. Hidden backup camera footage showing two suspects\n3. Timestamp analysis revealing 7-minute preparation window\n4. Employee access logs and scheduling records\n5. Physical evidence found during apartment search\n</PRIMARY_EVIDENCE>\n\n<CULPRITS>\nAmanda Rivers - Gallery art consultant, provided inside access and security codes\nDerek Nash - Ex-military boyfriend, executed the physical break-in\n</CULPRITS>\n\n<METHODOLOGY>\n1. Rivers provided security system access and timing information\n2. Nash used military training to disable sensors and extract paintings\n3. Both worked together to transport and hide stolen artwork\n4. Rivers called in sick to establish false alibi\n</METHODOLOGY>\n\n<RESOLUTION>\nBoth suspects arrested. All three paintings recovered in perfect condition. Rivers confessed to providing inside information. Nash admitted to the physical theft. Case clearance rate: 100%.\n</RESOLUTION>"
+  },
+  "original_metadata": {
+    "story_annotations": {
+      "Story Title": "The Meridian Gallery Heist",
+      "Case Type": "Art Theft",
+      "Date of First Publication (YYYY-MM-DD)": "2024-02-03",
+      "Solvable?": "Yes",
+      "Crime Location": "Meridian Art Gallery, Downtown",
+      "Primary Detective": "Detective Lisa Chen", 
+      "Number of Suspects": "2",
+      "Evidence Types": "Security footage, Access logs, Physical evidence",
+      "Case Status": "Closed - All suspects apprehended, all artwork recovered"
+    },
+    "author_metadata": {
+      "Given Name(s)": "True Detective",
+      "Surname(s)": "Cases",
+      "Department": "Downtown Precinct"
+    },
+    "plot_summary": "Professional art thieves stole $5 million worth of paintings from a downtown gallery using inside information. Detective Chen's investigation revealed it was an inside job perpetrated by a new employee and her ex-military boyfriend.",
+    "case_metadata": {
+      "jurisdiction": "Downtown District",
+      "investigating_officer": "Detective Lisa Chen",
+      "case_number": "DTN-2024-0203-002",
+      "crime_classification": "487 PC - Grand Theft",
+      "arrest_date": "2024-02-05",
+      "charges_filed": ["Grand Theft", "Burglary", "Conspiracy", "Receiving Stolen Property"]
+    }
+  }
+} 

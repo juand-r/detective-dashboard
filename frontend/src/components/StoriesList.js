@@ -1,63 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const StoriesList = () => {
+function StoriesList() {
+  const { dataset } = useParams();
+  const navigate = useNavigate();
   const [stories, setStories] = useState([]);
-  const [authors, setAuthors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAuthor, setSelectedAuthor] = useState('');
-  const [solvableFilter, setSolvableFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
-    fetchStories();
-    fetchAuthors();
-  }, []);
-
-  const fetchStories = async () => {
-    try {
-      const response = await fetch('/api/stories');
-      if (!response.ok) {
-        throw new Error('Failed to fetch stories');
+    const fetchStories = async () => {
+      try {
+        const response = await fetch(`/api/${dataset}/stories`);
+        if (!response.ok) throw new Error('Failed to fetch stories');
+        const data = await response.json();
+        setStories(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    if (dataset) {
+      fetchStories();
+    }
+  }, [dataset]);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/${dataset}/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error('Search failed');
       const data = await response.json();
-      setStories(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
     }
   };
 
-  const fetchAuthors = async () => {
-    try {
-      const response = await fetch('/api/authors');
-      if (!response.ok) {
-        throw new Error('Failed to fetch authors');
+  const displayedStories = searchResults || stories;
+
+  // Get dataset display info
+  const getDatasetInfo = (datasetId) => {
+    const datasets = {
+      'bmds': {
+        name: 'BMDS Dataset',
+        description: 'Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)'
+      },
+      'true-detective': {
+        name: 'True Detective Dataset', 
+        description: 'Real detective cases and investigations with forensic evidence'
+      },
+      'musr': {
+        name: 'MuSR Dataset',
+        description: 'Murder Mystery Stories for Reading comprehension'
+      },
+      'csi': {
+        name: 'CSI Corpus',
+        description: 'Crime Scene Investigation cases with forensic analysis'
       }
-      const data = await response.json();
-      setAuthors(data);
-    } catch (err) {
-      console.error('Error fetching authors:', err);
-    }
+    };
+    return datasets[datasetId] || { name: 'Unknown Dataset', description: 'Dataset information not available' };
   };
 
-  const filteredStories = stories.filter(story => {
-    const matchesSearch = !searchTerm || 
-      story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      story.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      story.storyTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      story.plotSummary.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesAuthor = !selectedAuthor || story.author === selectedAuthor;
-
-    const matchesSolvable = solvableFilter === 'all' || 
-      (solvableFilter === 'solvable' && story.isSolvable) ||
-      (solvableFilter === 'unsolvable' && !story.isSolvable);
-
-    return matchesSearch && matchesAuthor && matchesSolvable;
-  });
+  const datasetInfo = getDatasetInfo(dataset);
 
   const formatNumber = (num) => {
     return new Intl.NumberFormat().format(num);
@@ -68,8 +83,8 @@ const StoriesList = () => {
       <div>
         <header className="header">
           <div className="container">
-            <h1>Detective Solutions Dashboard</h1>
-            <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
+            <h1>{datasetInfo.name}</h1>
+            <p>{datasetInfo.description}</p>
           </div>
         </header>
         <div className="container">
@@ -84,8 +99,8 @@ const StoriesList = () => {
       <div>
         <header className="header">
           <div className="container">
-            <h1>Detective Solutions Dashboard</h1>
-            <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
+            <h1>{datasetInfo.name}</h1>
+            <p>{datasetInfo.description}</p>
           </div>
         </header>
         <div className="container">
@@ -101,11 +116,27 @@ const StoriesList = () => {
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1>Detective Solutions Dashboard</h1>
-              <p>Explore and analyze detective stories and their solutions. These are the "solvable" stories from the BMDS dataset (https://github.com/ahmmnd/BMDS)</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{
+                    padding: '0.5rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid white',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  ← Back to Datasets
+                </button>
+                <h1 style={{ margin: 0 }}>{datasetInfo.name}</h1>
+              </div>
+              <p>{datasetInfo.description}</p>
             </div>
             <Link 
-              to="/stats"
+              to={`/${dataset}/stats`}
               style={{
                 padding: '0.75rem 1.5rem',
                 backgroundColor: '#667eea',
@@ -124,53 +155,29 @@ const StoriesList = () => {
 
       <div className="container">
         <div className="search-section">
-          <input
-            type="text"
-            placeholder="Search stories, authors, titles, or plot summaries..."
-            className="search-bar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <form onSubmit={handleSearch} className="search-container">
+            <input
+              type="text"
+              placeholder="Search stories, authors, titles, or plot summaries..."
+              className="search-bar"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button type="submit" style={{ display: 'none' }}>Search</button>
+          </form>
           
           <div className="filters">
-            <label>
-              <span>Author: </span>
-              <select
-                className="filter-select"
-                value={selectedAuthor}
-                onChange={(e) => setSelectedAuthor(e.target.value)}
-              >
-                <option value="">All Authors</option>
-                {authors.map(author => (
-                  <option key={author} value={author}>{author}</option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span>Solvable: </span>
-              <select
-                className="filter-select"
-                value={solvableFilter}
-                onChange={(e) => setSolvableFilter(e.target.value)}
-              >
-                <option value="all">All Stories</option>
-                <option value="solvable">Solvable</option>
-                <option value="unsolvable">Unsolvable</option>
-              </select>
-            </label>
-
             <span>
-              Showing {filteredStories.length} of {stories.length} stories
+              {searchResults ? `Found ${displayedStories.length} matching stories` : `Showing ${displayedStories.length} stories`}
             </span>
           </div>
         </div>
 
         <div className="stories-grid">
-          {filteredStories.map(story => (
+          {displayedStories.map(story => (
             <Link 
               key={story.id} 
-              to={`/story/${story.id}`} 
+              to={`/${dataset}/story/${story.id}`} 
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div className="story-card">
@@ -201,7 +208,7 @@ const StoriesList = () => {
           ))}
         </div>
 
-        {filteredStories.length === 0 && (
+                  {displayedStories.length === 0 && (
           <div className="loading">
             No stories found matching your criteria.
           </div>

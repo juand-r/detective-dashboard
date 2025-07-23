@@ -1,0 +1,30 @@
+{
+  "model": "detective-summary-ai",
+  "case_id": "CASE001",
+  "summary_type": "investigation_analysis",
+  "final_summary": "The Riverside Bank Robbery case demonstrates textbook criminal investigation methodology and the importance of physical evidence in solving crimes.\n\nCrime Overview:\nOn a busy Friday afternoon, three masked perpetrators executed an armed robbery at First National Bank of Riverside, stealing approximately $47,000. The crime lasted 4 minutes and 23 seconds, with the suspects displaying organized planning and role specialization.\n\nKey Investigative Elements:\n- Security camera footage provided clear visual evidence of the suspects' physical characteristics and methods\n- Forensic evidence collection yielded both fingerprint and DNA samples from the crime scene\n- Witness testimony corroborated video evidence and provided additional identifying details\n- Vehicle registration tracing connected the suspects to a registered owner\n\nCritical Mistakes by Perpetrators:\n1. The leader (Marcus Thompson) left fingerprints on the bank counter\n2. An accomplice (Jimmy Rodriguez) discarded a cigarette containing his DNA\n3. They used a vehicle registered to an associate (Lisa Park) rather than a truly untraceable car\n4. They failed to account for backup security measures and witness observations\n\nInvestigative Success Factors:\nDetective Sarah Martinez's systematic approach combined traditional detective work with modern forensic science. The rapid identification of suspects through database matching, followed by coordinated arrests, resulted in a 100% case clearance rate with full confessions obtained.\n\nThis case serves as an excellent example of how multiple evidence streams (physical, digital, and testimonial) can converge to provide overwhelming proof of guilt, leading to swift justice and case resolution.",
+  "evidence_analysis": {
+    "physical_evidence": [
+      "Fingerprints on bank counter - matched Marcus Thompson",
+      "DNA from cigarette butt - matched Jimmy Rodriguez",
+      "Security camera footage - all three suspects visible"
+    ],
+    "digital_evidence": [
+      "Bank security system timestamps",
+      "ATM camera footage of getaway vehicle",
+      "Cell phone tower pings during crime timeframe"
+    ],
+    "testimonial_evidence": [
+      "Teller Maria Gonzalez - described leader's voice and demands",
+      "Customer David Chen - noted getaway car details",
+      "Security guard Tom Wilson - timing and response details"
+    ]
+  },
+  "case_outcome": {
+    "arrests_made": 3,
+    "conviction_rate": "100%",
+    "money_recovered": "$43,200 of $47,000 stolen",
+    "time_to_resolution": "48 hours",
+    "case_status": "Closed"
+  }
+} 

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const StoryStats = () => {
+function StoryStats() {
+  const { dataset } = useParams();
+  const navigate = useNavigate();
   const [statsData, setStatsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,37 +27,41 @@ const StoryStats = () => {
     concatPreRevealWords: true
   });
 
+
   const dropdownOptions = [
     'Yes',
     'No', 
     'Hallucinated First Name',
     'Missing First Name',
     'Wrong Alias',
-    'Mixed up main suspect and accomplice'
+    'Mixed up main suspect and accomplice',
+    'Missing one or more people',
+    'At least one person is correct, but some are wrong (and not accomplices)'
   ];
 
   useEffect(() => {
-    fetchStatsData();
-  }, []);
-
-  const fetchStatsData = async () => {
-    try {
-      const response = await fetch('/api/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch stats data');
+    const fetchStatsData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/${dataset}/stats`);
+        if (!response.ok) throw new Error('Failed to fetch stats data');
+        const data = await response.json();
+        setStatsData(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setStatsData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    };
+
+    if (dataset) {
+      fetchStatsData();
     }
-  };
+  }, [dataset]);
 
   const saveAnnotation = async (storyId, field, value) => {
     try {
-      const response = await fetch(`/api/annotations/${storyId}`, {
+      const response = await fetch(`/api/${dataset}/annotations/${storyId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -250,9 +256,43 @@ const StoryStats = () => {
     <div>
       <header className="header">
         <div className="container">
-          <h1>Story Statistics</h1>
-          <p>Comprehensive analysis table for all detective stories</p>
-          <Link to="/" className="back-button">← Back to Stories</Link>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => navigate(`/${dataset}`)}
+                  style={{
+                    padding: '0.5rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid white',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  ← Back to Stories
+                </button>
+                <h1 style={{ margin: 0 }}>Story Statistics</h1>
+              </div>
+              <p>Comprehensive analysis table for all detective stories</p>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '500',
+                fontSize: '0.875rem',
+                cursor: 'pointer'
+              }}
+            >
+              All Datasets
+            </button>
+          </div>
         </div>
       </header>
 
@@ -411,14 +451,14 @@ const StoryStats = () => {
                     zIndex: 15,
                     backgroundColor: '#f0f9ff'
                   }}>
-                    <div style={{ textAlign: 'left' }}>
-                      <Link 
-                        to={`/story/${story.storyId}`}
-                        style={{ 
-                          color: '#1f2937',
-                          textDecoration: 'none',
-                          fontWeight: '500'
-                        }}
+                                      <div style={{ textAlign: 'left' }}>
+                    <Link 
+                      to={`/${dataset}/story/${story.storyId}`}
+                      style={{ 
+                        color: '#1f2937',
+                        textDecoration: 'none',
+                        fontWeight: '500'
+                      }}
                         onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
                         onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                       >
@@ -471,13 +511,13 @@ const StoryStats = () => {
                               maxWidth: '200px', 
                               wordWrap: 'break-word'
                             }}>
-                              <Link 
-                                to={`/story/${story.storyId}`}
-                                style={{ 
-                                  color: story.correctAnnotatorGuess === 'No' ? '#dc2626' : '#1f2937',
-                                  fontWeight: story.correctAnnotatorGuess === 'No' ? '600' : 'normal',
-                                  textDecoration: 'none'
-                                }}
+                                                          <Link 
+                              to={`/${dataset}/story/${story.storyId}`}
+                              style={{ 
+                                color: story.correctAnnotatorGuess === 'No' ? '#dc2626' : '#1f2937',
+                                fontWeight: story.correctAnnotatorGuess === 'No' ? '600' : 'normal',
+                                textDecoration: 'none'
+                              }}
                                 onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
                                 onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                               >
@@ -568,6 +608,83 @@ const StoryStats = () => {
                   })
                 )}
               </tr>
+
+              {/* Count rows for each dropdown option */}
+              {dropdownOptions.map(option => {
+                // Calculate counts for this option across all dropdown fields
+                const getCountForOption = (option) => {
+                  const dropdownFields = ['culpritCorrect', 'accompliceCorrect', 'concatCulpritCorrect', 'concatAccompliceCorrect'];
+                  return statsData.reduce((count, story) => {
+                    return count + dropdownFields.filter(field => story[field] === option).length;
+                  }, 0);
+                };
+
+                const count = getCountForOption(option);
+
+                return (
+                  <tr key={`count-${option}`} style={{ backgroundColor: '#fef3c7' }}>
+                    {/* Story ID column with count label */}
+                    <td style={{
+                      padding: '0.5rem',
+                      borderTop: '1px solid #e5e7eb',
+                      borderBottom: '1px solid #e5e7eb',
+                      borderRight: '1px solid #e5e7eb',
+                      verticalAlign: 'top',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 15,
+                      backgroundColor: '#fde68a'
+                    }}>
+                      <div style={{ textAlign: 'left' }}>
+                        Count: {option}
+                      </div>
+                    </td>
+
+                    {/* Show counts in appropriate columns */}
+                    {Object.entries(columnGroups).map(([groupKey, group]) => 
+                      group.columns.filter(col => visibleColumns[col]).map((columnKey, index) => {
+                        const visibleColumnsInGroup = group.columns.filter(col => visibleColumns[col]);
+                        const isLastColumnInGroup = index === visibleColumnsInGroup.length - 1;
+                        const isLastGroup = groupKey === 'concat';
+                        
+                        // Show count only for dropdown fields, empty for others
+                        let displayValue = '';
+                        if (['culpritCorrect', 'accompliceCorrect', 'concatCulpritCorrect', 'concatAccompliceCorrect'].includes(columnKey)) {
+                          const fieldCount = statsData.filter(story => story[columnKey] === option).length;
+                          displayValue = fieldCount > 0 ? fieldCount.toString() : '0';
+                        } else {
+                          displayValue = '—'; // Em dash for non-applicable fields
+                        }
+                        
+                        return (
+                          <td key={columnKey} style={{
+                            padding: '0.5rem',
+                            borderTop: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
+                            borderRight: isLastGroup ? 'none' : 
+                                       isLastColumnInGroup ? '3px solid #6b7280' : '1px solid #e5e7eb',
+                            verticalAlign: 'top',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            position: columnKey === 'storyTitle' ? 'sticky' : 'static',
+                            left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                            zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
+                            backgroundColor: columnKey === 'storyTitle' ? '#fde68a' : '#fef3c7'
+                          }}>
+                            <div style={{ 
+                              textAlign: 'center'
+                            }}>
+                              {displayValue}
+                            </div>
+                          </td>
+                        );
+                      })
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function StoryDetail() {
-  const { id } = useParams();
+  const { dataset, id } = useParams();
   const navigate = useNavigate();
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ function StoryDetail() {
   useEffect(() => {
     const fetchStory = async () => {
       try {
-        const response = await fetch(`/api/stories/${id}`);
+        const response = await fetch(`/api/${dataset}/stories/${id}`);
         if (!response.ok) throw new Error('Story not found');
         const data = await response.json();
         setStory(data);
@@ -34,8 +34,10 @@ function StoryDetail() {
       }
     };
 
-    fetchStory();
-  }, [id]);
+    if (dataset && id) {
+      fetchStory();
+    }
+  }, [dataset, id]);
 
   if (loading) {
     return (
@@ -97,11 +99,27 @@ function StoryDetail() {
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1>{(() => {
-                const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
-                const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
-                return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
-              })()}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => navigate(`/${dataset}`)}
+                  style={{
+                    padding: '0.5rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid white',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  ← Back to Stories
+                </button>
+                <h1 style={{ margin: 0 }}>{(() => {
+                  const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+                  const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
+                  return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
+                })()}</h1>
+              </div>
               <p>by {(() => {
                 const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
                 const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
@@ -110,7 +128,7 @@ function StoryDetail() {
               })()}</p>
             </div>
             <button 
-              onClick={() => navigate('/stats')}
+                                onClick={() => navigate(`/${dataset}/stats`)}
               style={{
                 padding: '0.75rem 1.5rem',
                 backgroundColor: '#667eea',
@@ -395,7 +413,14 @@ function StoryDetail() {
               <div>
                 <div className="section-title">Story Text</div>
                 <div className="story-content" style={{ lineHeight: '1.8' }}>
-                  {story.story?.full_text || 'No story text available'}
+                  {story.story?.full_text ? 
+                    story.story.full_text.split('\n').map((paragraph, index) => (
+                      <p key={index} style={{ marginBottom: '1rem' }}>
+                        {paragraph}
+                      </p>
+                    )) : 
+                    'No story text available'
+                  }
                 </div>
 
                 {/* Reveal Segment Collapsible Section */}
@@ -470,6 +495,10 @@ function StoryDetail() {
                     <div style={{ lineHeight: '1.8' }}>
                       {(() => {
                         const parseStructuredSolution = (solutionText) => {
+                          if (!solutionText || typeof solutionText !== 'string') {
+                            return [];
+                          }
+                          
                           const sections = [];
                           const tagPattern = /<([^>]+)>/g;
                           const parts = solutionText.split(tagPattern);
@@ -601,4 +630,4 @@ function StoryDetail() {
   );
 }
 
-export default StoryDetail; 
+export default StoryDetail;

@@ -13,13 +13,28 @@ app.use(express.json());
 // Serve static files from the React app (for production)
 app.use(express.static(path.join(__dirname, 'frontend/build')));
 
-// Path to detective solutions directory
-const DETECTIVE_SOLUTIONS_DIR = path.join(__dirname, 'data');
-// Path to summaries directory
-const SUMMARIES_DIR = path.join(__dirname, 'summaries-concat-1k-v0');
-// Path to v2 solutions directory
-const DETECTIVE_SOLUTIONS_V2_DIR = path.join(__dirname, 'detective_solutions-o3-given-reveal');
-// Path to user annotations file
+// Dataset configuration
+const DATASETS = {
+  'bmds': {
+    name: 'BMDS Dataset',
+    description: 'Benchmark for Mystery & Detective Stories',
+    detectiveSolutionsDir: path.join(__dirname, 'data/bmds/stories'),
+    summariesDir: path.join(__dirname, 'data/bmds/summaries/summaries-concat-1k-v0'),
+    solutionsV2Dir: path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-given-reveal')
+  },
+  'true-detective': {
+    name: 'True Detective Dataset',
+    description: 'Real detective cases and investigations with forensic evidence',
+    detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/stories'),
+    summariesDir: path.join(__dirname, 'data/true-detective/summaries'),
+    solutionsV2Dir: path.join(__dirname, 'data/true-detective/v2-solutions') // Will create if needed
+  }
+};
+
+// Legacy paths for backwards compatibility (pointing to BMDS for now)
+const DETECTIVE_SOLUTIONS_DIR = path.join(__dirname, 'data/bmds/stories');
+const SUMMARIES_DIR = path.join(__dirname, 'data/bmds/summaries/summaries-concat-1k-v0');
+const DETECTIVE_SOLUTIONS_V2_DIR = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-given-reveal');
 const USER_ANNOTATIONS_FILE = path.join(__dirname, 'user_annotations.json');
 
 // Helper function to load user annotations
@@ -341,6 +356,29 @@ app.get('/api/stats', (req, res) => {
         } catch (error) {
           console.log(`Warning: Could not parse v2 solution for ${storyId}:`, error.message);
         }
+
+        // Parse without-reveal solution for oracle guesses
+        let oracleCulpritGuess = '';
+        let oracleAccompliceGuess = '';
+        
+        try {
+          const withoutRevealDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-without-reveal');
+          const withoutRevealFileName = `${storyId}_detective_solution.json`;
+          const withoutRevealFilePath = path.join(withoutRevealDir, withoutRevealFileName);
+          if (fs.existsSync(withoutRevealFilePath)) {
+            const withoutRevealData = JSON.parse(fs.readFileSync(withoutRevealFilePath, 'utf8'));
+            const withoutRevealSolutionText = withoutRevealData.detection?.solution || '';
+            
+            // Extract MAIN CULPRIT(S) and ACCOMPLICE(S) from without-reveal
+            const withoutRevealCulpritMatch = withoutRevealSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+            const withoutRevealAccompliceMatch = withoutRevealSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+            
+            oracleCulpritGuess = withoutRevealCulpritMatch ? withoutRevealCulpritMatch[1].trim() : '';
+            oracleAccompliceGuess = withoutRevealAccompliceMatch ? withoutRevealAccompliceMatch[1].trim() : '';
+          }
+        } catch (error) {
+          console.log(`Warning: Could not parse without-reveal solution for ${storyId}:`, error.message);
+        }
         
         // Calculate pre-reveal word count
         let preRevealWords = 0;
@@ -368,9 +406,9 @@ app.get('/api/stats', (req, res) => {
           o3GoldCulprits,
           o3GoldAccomplices,
           preRevealWords,
-          // User annotations
-          oracleCulpritGuess: storyAnnotations.oracleCulpritGuess || '',
-          oracleAccompliceGuess: storyAnnotations.oracleAccompliceGuess || '',
+          // Oracle guesses from without-reveal files
+          oracleCulpritGuess: oracleCulpritGuess,
+          oracleAccompliceGuess: oracleAccompliceGuess,
           culpritCorrect: storyAnnotations.culpritCorrect || '',
           accompliceCorrect: storyAnnotations.accompliceCorrect || '',
           concatCulpritGuess: storyAnnotations.concatCulpritGuess || '',
@@ -424,6 +462,395 @@ app.get('/api/annotations', (req, res) => {
   } catch (error) {
     console.error('Error loading annotations:', error);
     res.status(500).json({ error: 'Failed to load annotations' });
+  }
+});
+
+// === DATASET-SPECIFIC ROUTES ===
+
+// Middleware to validate dataset
+function validateDataset(req, res, next) {
+  const { dataset } = req.params;
+  if (!DATASETS[dataset]) {
+    return res.status(404).json({ error: `Dataset '${dataset}' not found` });
+  }
+  req.datasetConfig = DATASETS[dataset];
+  next();
+}
+
+// Dataset-specific routes
+app.get('/api/:dataset/stories', validateDataset, (req, res) => {
+  try {
+    const { dataset } = req.params;
+    const { detectiveSolutionsDir, summariesDir, solutionsV2Dir } = req.datasetConfig;
+    
+    const files = fs.readdirSync(detectiveSolutionsDir);
+    const stories = [];
+
+    files.forEach(filename => {
+      if (filename.endsWith('.json')) {
+        try {
+          const filePath = path.join(detectiveSolutionsDir, filename);
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          
+          // Extract story code from filename
+          const storyCode = filename.replace('_detective_solution.json', '');
+          
+          // Extract publication date
+          const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+          
+          // Try to read corresponding summary file
+          let summary = null;
+          let storySummary = null;
+          try {
+            const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+            const summaryFilePath = path.join(summariesDir, summaryFileName);
+            if (fs.existsSync(summaryFilePath)) {
+              const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+              summary = summaryData;
+              storySummary = summaryData.final_summary || null;
+            }
+          } catch (error) {
+            console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+          }
+          
+              // Try to read corresponding v2 solution file
+    let solutionV2 = null;
+    try {
+      const v2FileName = `${storyCode}_detective_solution.json`;
+      const v2FilePath = path.join(solutionsV2Dir, v2FileName);
+      if (fs.existsSync(v2FilePath)) {
+        const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+        solutionV2 = v2Data.detection?.solution || null;
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+    }
+
+          const story = {
+            id: storyCode,
+            storyTitle: data.original_metadata?.story_annotations?.["Story Title"] || filename,
+            author: (() => {
+              const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+              const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+              return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+            })(),
+            plotSummary: data.original_metadata?.plot_summary || 'No plot summary available',
+            isSolvable: data.original_metadata?.story_annotations?.["Solvable?"] === "Yes",
+            publicationDate: publicationDate,
+            summary: summary,
+            storySummary: storySummary,
+            solutionV2: solutionV2
+          };
+
+          stories.push(story);
+        } catch (error) {
+          console.error(`Error processing file ${filename}:`, error);
+        }
+      }
+    });
+
+    res.json(stories);
+  } catch (error) {
+    console.error('Error reading detective solutions:', error);
+    res.status(500).json({ error: 'Failed to read detective solutions' });
+  }
+});
+
+app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
+  try {
+    const { dataset, id } = req.params;
+    const { detectiveSolutionsDir, summariesDir, solutionsV2Dir } = req.datasetConfig;
+    
+    const filename = `${id}_detective_solution.json`;
+    const filePath = path.join(detectiveSolutionsDir, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    
+    // Extract publication date
+    const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+    
+    // Try to read corresponding summary file
+    let summary = null;
+    let storySummary = null;
+    try {
+      const summaryFileName = `${id}_latest_full_document_response.json`;
+      const summaryFilePath = path.join(summariesDir, summaryFileName);
+      if (fs.existsSync(summaryFilePath)) {
+        const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+        summary = summaryData;
+        storySummary = summaryData.final_summary || null;
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read summary for ${id}:`, error.message);
+    }
+    
+    // Try to read corresponding v2 solution file
+    let solutionV2 = null;
+    try {
+      const v2FileName = `${id}_detective_solution.json`;
+      const v2FilePath = path.join(solutionsV2Dir, v2FileName);
+      if (fs.existsSync(v2FilePath)) {
+        const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+        solutionV2 = v2Data.detection?.solution || null;
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read v2 solution for ${id}:`, error.message);
+    }
+
+    const response = {
+      ...data,
+      id: id,
+      publicationDate: publicationDate,
+      summary: summary,
+      storySummary: storySummary,
+      solutionV2: solutionV2
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error reading detective solution:', error);
+    res.status(500).json({ error: 'Failed to read detective solution' });
+  }
+});
+
+app.get('/api/:dataset/search', validateDataset, (req, res) => {
+  try {
+    const { dataset } = req.params;
+    const { detectiveSolutionsDir, summariesDir, solutionsV2Dir } = req.datasetConfig;
+    const query = req.query.q?.toLowerCase() || '';
+    
+    if (!query) {
+      return res.json([]);
+    }
+
+    const files = fs.readdirSync(detectiveSolutionsDir);
+    const results = [];
+
+    files.forEach(filename => {
+      if (filename.endsWith('.json')) {
+        try {
+          const filePath = path.join(detectiveSolutionsDir, filename);
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          
+          const storyCode = filename.replace('_detective_solution.json', '');
+          const storyTitle = data.original_metadata?.story_annotations?.["Story Title"] || filename;
+          const author = (() => {
+            const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+            const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+            return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+          })();
+          const plotSummary = data.original_metadata?.plot_summary || '';
+          const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
+          
+          // Check if any field matches the query
+          const matches = [
+            storyTitle,
+            author,
+            plotSummary,
+            storyCode
+          ].some(field => field.toLowerCase().includes(query));
+
+          if (matches) {
+            // Try to read corresponding summary and v2 solution files
+            let summary = null;
+            let storySummary = null;
+            let solutionV2 = null;
+            
+            try {
+              const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+              const summaryFilePath = path.join(summariesDir, summaryFileName);
+              if (fs.existsSync(summaryFilePath)) {
+                const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+                summary = summaryData;
+                storySummary = summaryData.final_summary || null;
+              }
+            } catch (error) {
+              console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+            }
+            
+            try {
+              const v2FileName = `${storyCode}_detective_solution.json`;
+              const v2FilePath = path.join(solutionsV2Dir, v2FileName);
+              if (fs.existsSync(v2FilePath)) {
+                const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+                solutionV2 = v2Data.detection?.solution || null;
+              }
+            } catch (error) {
+              console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+            }
+
+            results.push({
+              id: storyCode,
+              storyTitle: storyTitle,
+              author: author,
+              plotSummary: plotSummary,
+              isSolvable: data.original_metadata?.story_annotations?.["Solvable?"] === "Yes",
+              publicationDate: publicationDate,
+              summary: summary,
+              storySummary: storySummary,
+              solutionV2: solutionV2
+            });
+          }
+        } catch (error) {
+          console.error(`Error processing file ${filename}:`, error);
+        }
+      }
+    });
+
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching stories:', error);
+    res.status(500).json({ error: 'Failed to search stories' });
+  }
+});
+
+app.get('/api/:dataset/stats', validateDataset, (req, res) => {
+  try {
+    const { dataset } = req.params;
+    const { detectiveSolutionsDir, summariesDir, solutionsV2Dir } = req.datasetConfig;
+    
+    const files = fs.readdirSync(detectiveSolutionsDir);
+    const stats = [];
+    const userAnnotations = loadUserAnnotations();
+
+    files.forEach(filename => {
+      if (filename.endsWith('.json')) {
+        try {
+          const filePath = path.join(detectiveSolutionsDir, filename);
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          
+          const storyCode = filename.replace('_detective_solution.json', '');
+          
+          // Try to read v2 solution file for o3 gold data
+          let o3GoldCulprits = '';
+          let o3GoldAccomplices = '';
+          try {
+            const v2FileName = `${storyCode}_detective_solution.json`;
+            const v2FilePath = path.join(solutionsV2Dir, v2FileName);
+            if (fs.existsSync(v2FilePath)) {
+              const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+              const solutionText = v2Data.detection?.solution;
+              
+              // Parse culprits and accomplices from the structured response
+              if (typeof solutionText === 'string') {
+                const culpritMatch = solutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                const accompliceMatch = solutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                
+                o3GoldCulprits = culpritMatch ? culpritMatch[1].trim() : '';
+                o3GoldAccomplices = accompliceMatch ? accompliceMatch[1].trim() : '';
+              }
+            }
+          } catch (error) {
+            console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+          }
+
+          // Try to read without-reveal solution file for oracle data
+          let oracleCulpritGuess = '';
+          let oracleAccompliceGuess = '';
+          try {
+            const withoutRevealDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-without-reveal');
+            const withoutRevealFileName = `${storyCode}_detective_solution.json`;
+            const withoutRevealFilePath = path.join(withoutRevealDir, withoutRevealFileName);
+            if (fs.existsSync(withoutRevealFilePath)) {
+              const withoutRevealData = JSON.parse(fs.readFileSync(withoutRevealFilePath, 'utf8'));
+              const withoutRevealSolutionText = withoutRevealData.detection?.solution;
+              
+              // Parse culprits and accomplices from the structured response
+              if (typeof withoutRevealSolutionText === 'string') {
+                const withoutRevealCulpritMatch = withoutRevealSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                const withoutRevealAccompliceMatch = withoutRevealSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                
+                oracleCulpritGuess = withoutRevealCulpritMatch ? withoutRevealCulpritMatch[1].trim() : '';
+                oracleAccompliceGuess = withoutRevealAccompliceMatch ? withoutRevealAccompliceMatch[1].trim() : '';
+              }
+            }
+          } catch (error) {
+            console.log(`Warning: Could not read without-reveal solution for ${storyCode}:`, error.message);
+          }
+          
+          // Try to read summary file for additional data
+          let summaryData = null;
+          try {
+            const summaryFileName = `${storyCode}_latest_full_document_response.json`;
+            const summaryFilePath = path.join(summariesDir, summaryFileName);
+            if (fs.existsSync(summaryFilePath)) {
+              summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+            }
+          } catch (error) {
+            console.log(`Warning: Could not read summary for ${storyCode}:`, error.message);
+          }
+
+          // Calculate story length
+          const fullText = data.story?.full_text || '';
+          const storyLengthWords = fullText ? fullText.split(/\s+/).length : 0;
+          
+          // Calculate pre-reveal words
+          const revealText = data.story?.reveal_segment || '';
+          const preRevealWords = storyLengthWords - (revealText ? revealText.split(/\s+/).length : 0);
+
+          const storyAnnotations = userAnnotations[storyCode] || {};
+
+          const statEntry = {
+            storyId: storyCode,
+            storyTitle: data.original_metadata?.story_annotations?.["Story Title"] || storyCode,
+            storyLengthWords: storyLengthWords,
+            o3GoldCulprits: o3GoldCulprits,
+            o3GoldAccomplices: o3GoldAccomplices,
+            // Oracle data from without-reveal files
+            oracleCulpritGuess: oracleCulpritGuess,
+            oracleAccompliceGuess: oracleAccompliceGuess,
+            culpritCorrect: storyAnnotations.culpritCorrect || '',
+            accompliceCorrect: storyAnnotations.accompliceCorrect || '',
+            preRevealWords: preRevealWords,
+            // Concat+prompt data (placeholder - would need actual concat responses)
+            concatCulpritGuess: summaryData?.concat_culprit_guess || '',
+            concatAccompliceGuess: summaryData?.concat_accomplice_guess || '',
+            concatCulpritCorrect: storyAnnotations.concatCulpritCorrect || '',
+            concatAccompliceCorrect: storyAnnotations.concatAccompliceCorrect || '',
+            concatPreRevealWords: preRevealWords, // Same as preRevealWords for now
+            // Additional metadata
+            correctAnnotatorGuess: data.original_metadata?.story_annotations?.["Correct annotator guess"] || ''
+          };
+
+          stats.push(statEntry);
+        } catch (error) {
+          console.error(`Error processing file ${filename}:`, error);
+        }
+      }
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error generating stats:', error);
+    res.status(500).json({ error: 'Failed to generate stats' });
+  }
+});
+
+app.post('/api/:dataset/annotations/:storyId', validateDataset, (req, res) => {
+  try {
+    const { dataset, storyId } = req.params;
+    const { field, value } = req.body;
+    
+    const userAnnotations = loadUserAnnotations();
+    
+    if (!userAnnotations[storyId]) {
+      userAnnotations[storyId] = {};
+    }
+    
+    userAnnotations[storyId][field] = value;
+    
+    if (saveUserAnnotations(userAnnotations)) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save annotation' });
+    }
+  } catch (error) {
+    console.error('Error saving annotation:', error);
+    res.status(500).json({ error: 'Failed to save annotation' });
   }
 });
 

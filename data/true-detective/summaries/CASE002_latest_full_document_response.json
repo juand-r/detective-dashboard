@@ -1,0 +1,30 @@
+{
+  "model": "detective-summary-ai",
+  "case_id": "CASE002", 
+  "summary_type": "investigation_analysis",
+  "final_summary": "The Meridian Gallery Heist represents a sophisticated inside job that combined insider knowledge with professional execution skills, ultimately undone by digital forensics and systematic investigation.\n\nCrime Synopsis:\nA meticulously planned art theft targeted three high-value paintings worth over $5 million from the Meridian Art Gallery. The perpetrators demonstrated intimate knowledge of security systems and professional-level execution, suggesting careful preparation and insider access.\n\nInvestigative Breakthrough:\nDetective Lisa Chen's analysis of security system logs proved crucial to solving the case. The discovery that motion sensors were disabled using a master override code - known only to five individuals - immediately narrowed the suspect pool and focused the investigation.\n\nInsider Threat Analysis:\nAmanda Rivers, the gallery's newest art consultant, became the prime suspect through process of elimination and behavioral analysis. Her suspicious absence on the night of the theft, combined with her boyfriend's military background, created a compelling suspect profile.\n\nTechnical Evidence:\n- Security system timestamps revealed precise timing of the override code usage\n- Hidden backup cameras captured footage despite disabled primary sensors\n- Digital access logs provided irrefutable proof of insider involvement\n- Physical evidence recovered during search warrant execution confirmed the case\n\nProfessional Criminal Network:\nThe partnership between Rivers (inside access) and Derek Nash (technical execution) demonstrates how insider threats can leverage external expertise to commit sophisticated crimes. Nash's military training provided the tactical skills needed for the physical break-in.\n\nCase Resolution:\nThe investigation concluded with both suspects in custody, all stolen artwork recovered in perfect condition, and full confessions obtained. This case highlights the effectiveness of combining traditional detective work with modern digital forensics in solving complex property crimes.",
+  "evidence_analysis": {
+    "digital_evidence": [
+      "Security system override logs with exact timestamps",
+      "Employee access records and scheduling data", 
+      "Hidden camera footage showing suspect methodology"
+    ],
+    "physical_evidence": [
+      "Stolen paintings recovered from suspect's residence",
+      "Gallery floor plans and security documentation found",
+      "Professional tools used for sensor disabling"
+    ],
+    "behavioral_evidence": [
+      "Rivers' convenient sick day absence during theft",
+      "Nash's military background matching crime execution",
+      "Inside knowledge demonstrated by clean sensor bypass"
+    ]
+  },
+  "case_outcome": {
+    "arrests_made": 2,
+    "conviction_rate": "100%",
+    "artwork_recovered": "All 3 paintings - $5M+ value",
+    "time_to_resolution": "72 hours",
+    "case_status": "Closed - Full recovery achieved"
+  }
+} 
