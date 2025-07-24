@@ -174,10 +174,17 @@ function StoryDetail() {
           </div>
 
           <div className="story-detail-content">
-            {/* Plot Summary */}
+            {/* Plot Summary / Synopsis */}
             <div className="plot-summary" style={{ marginBottom: '1.5rem' }}>
-              <div className="section-title">Plot Summary</div>
-              <p>{story.original_metadata?.plot_summary || 'No plot summary available.'}</p>
+              <div className="section-title">
+                {dataset === 'true-detective' ? 'Synopsis' : 'Plot Summary'}
+              </div>
+              <p>
+                {dataset === 'true-detective' 
+                  ? `${story.story?.full_text?.substring(0, 300) || 'No story text available'}...`
+                  : (story.original_metadata?.plot_summary || 'No plot summary available.')
+                }
+              </p>
             </div>
 
             {/* Clues & Evidence Section */}
@@ -364,60 +371,62 @@ function StoryDetail() {
                 )}
               </div>
 
-              {/* Clues Collapsible Pane */}
-              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                <div 
-                  onClick={() => toggleSection('clues-info')}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: '#f8fafc',
-                    borderBottom: collapsedSections['clues-info'] ? 'none' : '1px solid #e2e8f0',
-                    borderRadius: collapsedSections['clues-info'] ? '8px' : '8px 8px 0 0',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    fontWeight: '600',
-                    color: '#2d3748',
-                    userSelect: 'none'
-                  }}
-                >
-                  <span>Clues</span>
-                  <span style={{ 
-                    transform: collapsedSections['clues-info'] ? 'rotate(0deg)' : 'rotate(90deg)',
-                    transition: 'transform 0.2s ease',
-                    fontSize: '1.2rem'
-                  }}>
-                    ▶
-                  </span>
-                </div>
-                {!collapsedSections['clues-info'] && (
-                  <div style={{ 
-                    padding: '1.5rem',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '0 0 8px 8px'
-                  }}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Essential Clue:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Essential clue"] || 'Not specified'}
-                      </span>
-                    </div>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Most Salient Clue:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Most salient clue"] || 'Not specified'}
-                      </span>
-                    </div>
-                    <div>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Presence of Planted or Fabricated Evidence:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Presence of planted or fabricated evidence"] || 'None'}
-                      </span>
-                    </div>
+              {/* Clues Collapsible Pane - Only show for BMDS dataset */}
+              {dataset !== 'true-detective' && (
+                <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <div 
+                    onClick={() => toggleSection('clues-info')}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: '#f8fafc',
+                      borderBottom: collapsedSections['clues-info'] ? 'none' : '1px solid #e2e8f0',
+                      borderRadius: collapsedSections['clues-info'] ? '8px' : '8px 8px 0 0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontWeight: '600',
+                      color: '#2d3748',
+                      userSelect: 'none'
+                    }}
+                  >
+                    <span>Clues</span>
+                    <span style={{ 
+                      transform: collapsedSections['clues-info'] ? 'rotate(0deg)' : 'rotate(90deg)',
+                      transition: 'transform 0.2s ease',
+                      fontSize: '1.2rem'
+                    }}>
+                      ▶
+                    </span>
                   </div>
-                )}
-              </div>
+                  {!collapsedSections['clues-info'] && (
+                    <div style={{ 
+                      padding: '1.5rem',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '0 0 8px 8px'
+                    }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Essential Clue:</strong>
+                        <span style={{ color: '#4a5568' }}>
+                          {story.original_metadata?.story_annotations?.["Essential clue"] || 'Not specified'}
+                        </span>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Most Salient Clue:</strong>
+                        <span style={{ color: '#4a5568' }}>
+                          {story.original_metadata?.story_annotations?.["Most salient clue"] || 'Not specified'}
+                        </span>
+                      </div>
+                      <div>
+                        <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Presence of Planted or Fabricated Evidence:</strong>
+                        <span style={{ color: '#4a5568' }}>
+                          {story.original_metadata?.story_annotations?.["Presence of planted or fabricated evidence"] || 'None'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Tab Navigation */}
