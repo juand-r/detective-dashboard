@@ -24,7 +24,7 @@ const DATASETS = {
   },
   'true-detective': {
     name: 'True Detective Dataset',
-    description: 'Short mystery puzzles from the True Detective dataset (@https://github.com/TartuNLP/true-detective )',
+    description: 'Short mystery puzzles from the True Detective dataset (https://github.com/TartuNLP/true-detective )',
     detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/stories'),
     summariesDir: path.join(__dirname, 'data/true-detective/summaries'),
     solutionsV2Dir: path.join(__dirname, 'data/true-detective/v2-solutions') // Will create if needed
@@ -819,48 +819,76 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
           let oracleCulpritGuess = '';
           let oracleAccompliceGuess = '';
           try {
-            const withoutRevealDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-without-reveal');
-            const withoutRevealFileName = `${storyCode}_detective_solution.json`;
-            const withoutRevealFilePath = path.join(withoutRevealDir, withoutRevealFileName);
-            if (fs.existsSync(withoutRevealFilePath)) {
-              const withoutRevealData = JSON.parse(fs.readFileSync(withoutRevealFilePath, 'utf8'));
-              const withoutRevealSolutionText = withoutRevealData.detection?.solution;
+            if (dataset === 'true-detective') {
+              // For true-detective: read from detective_solutions-true-detective-without-reveal (same as concat for now)
+              const trueDetectiveWithoutRevealDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal');
+              const trueDetectiveWithoutRevealFileName = `${storyCode}_detective_solution.json`;
+              const trueDetectiveWithoutRevealFilePath = path.join(trueDetectiveWithoutRevealDir, trueDetectiveWithoutRevealFileName);
               
-              // Parse culprits and accomplices from the structured response
-              if (typeof withoutRevealSolutionText === 'string') {
-                const withoutRevealCulpritMatch = withoutRevealSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
-                const withoutRevealAccompliceMatch = withoutRevealSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+              if (fs.existsSync(trueDetectiveWithoutRevealFilePath)) {
+                const trueDetectiveWithoutRevealData = JSON.parse(fs.readFileSync(trueDetectiveWithoutRevealFilePath, 'utf8'));
+                const solutionText = trueDetectiveWithoutRevealData.detection?.solution;
                 
-                oracleCulpritGuess = withoutRevealCulpritMatch ? withoutRevealCulpritMatch[1].trim() : '';
-                oracleAccompliceGuess = withoutRevealAccompliceMatch ? withoutRevealAccompliceMatch[1].trim() : '';
+                // Parse culprit from the structured response (true-detective uses <CULPRIT> tags)
+                if (typeof solutionText === 'string') {
+                  const culpritMatch = solutionText.match(/<CULPRIT>(.*?)<\/CULPRIT>/s);
+                  oracleCulpritGuess = culpritMatch ? culpritMatch[1].trim() : '';
+                  // True-detective doesn't typically have accomplices in this format
+                  oracleAccompliceGuess = '';
+                }
+              }
+            } else {
+              // For BMDS: use the existing without-reveal solution logic
+              const withoutRevealDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-without-reveal');
+              const withoutRevealFileName = `${storyCode}_detective_solution.json`;
+              const withoutRevealFilePath = path.join(withoutRevealDir, withoutRevealFileName);
+              if (fs.existsSync(withoutRevealFilePath)) {
+                const withoutRevealData = JSON.parse(fs.readFileSync(withoutRevealFilePath, 'utf8'));
+                const withoutRevealSolutionText = withoutRevealData.detection?.solution;
+                
+                // Parse culprits and accomplices from the structured response
+                if (typeof withoutRevealSolutionText === 'string') {
+                  const withoutRevealCulpritMatch = withoutRevealSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                  const withoutRevealAccompliceMatch = withoutRevealSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                  
+                  oracleCulpritGuess = withoutRevealCulpritMatch ? withoutRevealCulpritMatch[1].trim() : '';
+                  oracleAccompliceGuess = withoutRevealAccompliceMatch ? withoutRevealAccompliceMatch[1].trim() : '';
+                }
               }
             }
           } catch (error) {
             console.log(`Warning: Could not read without-reveal solution for ${storyCode}:`, error.message);
           }
 
-          // Try to read custom-bmds solution file for concat data
+          // Try to read solution file for concat data
           let concatCulpritGuess = '';
           let concatAccompliceGuess = '';
           try {
-            const customBmdsDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-600-900-words-v2');
-            const customBmdsFileName = `${storyCode}_detective_solution.json`;
-            const customBmdsFilePath = path.join(customBmdsDir, customBmdsFileName);
-            if (fs.existsSync(customBmdsFilePath)) {
-              const customBmdsData = JSON.parse(fs.readFileSync(customBmdsFilePath, 'utf8'));
-              const customBmdsSolutionText = customBmdsData.detection?.solution;
-              
-              // Parse culprits and accomplices from the structured response
-              if (typeof customBmdsSolutionText === 'string') {
-                const customBmdsCulpritMatch = customBmdsSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
-                const customBmdsAccompliceMatch = customBmdsSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+            if (dataset === 'true-detective') {
+              // For true-detective: leave concat columns blank
+              concatCulpritGuess = '';
+              concatAccompliceGuess = '';
+            } else {
+              // For BMDS: use the existing custom-bmds solution logic
+              const customBmdsDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-600-900-words-v2');
+              const customBmdsFileName = `${storyCode}_detective_solution.json`;
+              const customBmdsFilePath = path.join(customBmdsDir, customBmdsFileName);
+              if (fs.existsSync(customBmdsFilePath)) {
+                const customBmdsData = JSON.parse(fs.readFileSync(customBmdsFilePath, 'utf8'));
+                const customBmdsSolutionText = customBmdsData.detection?.solution;
                 
-                concatCulpritGuess = customBmdsCulpritMatch ? customBmdsCulpritMatch[1].trim() : '';
-                concatAccompliceGuess = customBmdsAccompliceMatch ? customBmdsAccompliceMatch[1].trim() : '';
+                // Parse culprits and accomplices from the structured response
+                if (typeof customBmdsSolutionText === 'string') {
+                  const customBmdsCulpritMatch = customBmdsSolutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                  const customBmdsAccompliceMatch = customBmdsSolutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                  
+                  concatCulpritGuess = customBmdsCulpritMatch ? customBmdsCulpritMatch[1].trim() : '';
+                  concatAccompliceGuess = customBmdsAccompliceMatch ? customBmdsAccompliceMatch[1].trim() : '';
+                }
               }
             }
           } catch (error) {
-            console.log(`Warning: Could not read custom-bmds solution for ${storyCode}:`, error.message);
+            console.log(`Warning: Could not read solution for ${storyCode}:`, error.message);
           }
           
           // Try to read summary file for additional data

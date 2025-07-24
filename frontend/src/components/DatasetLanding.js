@@ -13,7 +13,7 @@ function DatasetLanding() {
     {
       id: 'true-detective',
       name: 'True Detective Dataset',
-      description: 'Short mystery puzzles from the True Detective dataset (@https://github.com/TartuNLP/true-detective )',
+      description: 'Short mystery puzzles from the True Detective dataset (https://github.com/TartuNLP/true-detective )',
       githubUrl: '#', // placeholder
       color: '#10b981' // green
     },
