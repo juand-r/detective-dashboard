@@ -771,27 +771,48 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
           
           const storyCode = filename.replace('_detective_solution.json', '');
           
-          // Try to read v2 solution file for o3 gold data
+          // Try to read solution file for o3 gold data
           let o3GoldCulprits = '';
           let o3GoldAccomplices = '';
           try {
-            const v2FileName = `${storyCode}_detective_solution.json`;
-            const v2FilePath = path.join(solutionsV2Dir, v2FileName);
-            if (fs.existsSync(v2FilePath)) {
-              const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
-              const solutionText = v2Data.detection?.solution;
+            if (dataset === 'true-detective') {
+              // For true-detective: read from detective_solutions-true-detective-with-reveal
+              const trueDetectiveDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-with-reveal');
+              const trueDetectiveFileName = `${storyCode}_detective_solution.json`;
+              const trueDetectiveFilePath = path.join(trueDetectiveDir, trueDetectiveFileName);
               
-              // Parse culprits and accomplices from the structured response
-              if (typeof solutionText === 'string') {
-                const culpritMatch = solutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
-                const accompliceMatch = solutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+              if (fs.existsSync(trueDetectiveFilePath)) {
+                const trueDetectiveData = JSON.parse(fs.readFileSync(trueDetectiveFilePath, 'utf8'));
+                const solutionText = trueDetectiveData.detection?.solution;
                 
-                o3GoldCulprits = culpritMatch ? culpritMatch[1].trim() : '';
-                o3GoldAccomplices = accompliceMatch ? accompliceMatch[1].trim() : '';
+                // Parse culprit from the structured response (true-detective uses <CULPRIT> tags)
+                if (typeof solutionText === 'string') {
+                  const culpritMatch = solutionText.match(/<CULPRIT>(.*?)<\/CULPRIT>/s);
+                  o3GoldCulprits = culpritMatch ? culpritMatch[1].trim() : '';
+                  // True-detective doesn't typically have accomplices in this format
+                  o3GoldAccomplices = '';
+                }
+              }
+            } else {
+              // For BMDS: use the existing v2 solution logic
+              const v2FileName = `${storyCode}_detective_solution.json`;
+              const v2FilePath = path.join(solutionsV2Dir, v2FileName);
+              if (fs.existsSync(v2FilePath)) {
+                const v2Data = JSON.parse(fs.readFileSync(v2FilePath, 'utf8'));
+                const solutionText = v2Data.detection?.solution;
+                
+                // Parse culprits and accomplices from the structured response
+                if (typeof solutionText === 'string') {
+                  const culpritMatch = solutionText.match(/<MAIN CULPRIT\(S\)>(.*?)<\/MAIN CULPRIT\(S\)>/s);
+                  const accompliceMatch = solutionText.match(/<ACCOMPLICE\(S\)>(.*?)<\/ACCOMPLICE\(S\)>/s);
+                  
+                  o3GoldCulprits = culpritMatch ? culpritMatch[1].trim() : '';
+                  o3GoldAccomplices = accompliceMatch ? accompliceMatch[1].trim() : '';
+                }
               }
             }
           } catch (error) {
-            console.log(`Warning: Could not read v2 solution for ${storyCode}:`, error.message);
+            console.log(`Warning: Could not read solution for ${storyCode}:`, error.message);
           }
 
           // Try to read without-reveal solution file for oracle data
@@ -872,6 +893,14 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
             storyLengthWords: storyLengthWords,
             // Add true-detective specific fields
             ...(dataset === 'true-detective' && {
+              solveRate: (() => {
+                const rate = data.original_metadata?.solve_rate;
+                const attempts = data.original_metadata?.attempts;
+                if (rate !== undefined && attempts !== undefined) {
+                  return `${rate}% (${attempts.toLocaleString()})`;
+                }
+                return 'Unknown';
+              })(),
               suspects: data.original_metadata?.answer_options || '',
               culprit: data.original_metadata?.correct_answer || ''
             }),

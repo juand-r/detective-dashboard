@@ -35,7 +35,7 @@ function StoryDetail() {
     };
 
     if (dataset && id) {
-      fetchStory();
+    fetchStory();
     }
   }, [dataset, id]);
 
@@ -120,18 +120,18 @@ function StoryDetail() {
                   return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
                 })()}</h1>
               </div>
-              <p>by {(() => {
+          <p>by {(() => {
                 // Handle different datasets
                 if (dataset === 'true-detective') {
                   return story.original_metadata?.author_name || 'Unknown Author';
                 } else {
                   // BMDS dataset
-                  const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-                  const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
-                  const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
-                  return author;
+            const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+            const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
+            const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+            return author;
                 }
-              })()}</p>
+          })()}</p>
             </div>
             <button 
                                 onClick={() => navigate(`/${dataset}/stats`)}
@@ -411,8 +411,8 @@ function StoryDetail() {
                         <span style={{ color: '#4a5568' }}>
                           {story.original_metadata?.story_annotations?.["Most salient clue"] || 'Not specified'}
                         </span>
-                      </div>
-                      <div>
+            </div>
+              <div>
                         <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Presence of Planted or Fabricated Evidence:</strong>
                         <span style={{ color: '#4a5568' }}>
                           {story.original_metadata?.story_annotations?.["Presence of planted or fabricated evidence"] || 'None'}
@@ -422,7 +422,7 @@ function StoryDetail() {
                   )}
                 </div>
               )}
-            </div>
+              </div>
 
             {/* Tab Navigation */}
             <div style={{ marginTop: '2rem', borderBottom: '2px solid #e2e8f0' }}>
@@ -443,19 +443,19 @@ function StoryDetail() {
                 </button>
                 {/* Hide Solution (o3) tab for true-detective */}
                 {dataset !== 'true-detective' && (
-                  <button
-                    onClick={() => setActiveTab('solution')}
-                    style={{
-                      padding: '1rem 2rem',
-                      border: 'none',
-                      background: activeTab === 'solution' ? '#667eea' : 'transparent',
-                      color: activeTab === 'solution' ? 'white' : '#4a5568',
-                      cursor: 'pointer',
-                      borderRadius: '8px 8px 0 0',
-                      fontWeight: activeTab === 'solution' ? '600' : 'normal'
-                    }}
-                  >
-                    Solution (o3)
+                <button
+                  onClick={() => setActiveTab('solution')}
+                  style={{
+                    padding: '1rem 2rem',
+                    border: 'none',
+                    background: activeTab === 'solution' ? '#667eea' : 'transparent',
+                    color: activeTab === 'solution' ? 'white' : '#4a5568',
+                    cursor: 'pointer',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: activeTab === 'solution' ? '600' : 'normal'
+                  }}
+                >
+                  Solution (o3)
                   </button>
                 )}
                 <button
@@ -558,7 +558,7 @@ function StoryDetail() {
                   {story.detection?.solution ? (
                     <div style={{ lineHeight: '1.8' }}>
                       {story.detection.solution}
-                    </div>
+                  </div>
                   ) : (
                     <p style={{ fontStyle: 'italic', color: '#718096' }}>
                       No solution available for this story.
@@ -779,8 +779,8 @@ function StoryDetail() {
                                       }}>
                                         {section.content}
                                       </p>
-                                    </div>
-                                  )}
+                  </div>
+                )}
                                 </div>
                               ))}
                             </div>
@@ -824,4 +824,4 @@ function StoryDetail() {
   );
 }
 
-export default StoryDetail;
+export default StoryDetail; 

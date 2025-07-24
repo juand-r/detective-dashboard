@@ -10,12 +10,13 @@ function StoryStats() {
   const [visibleColumns, setVisibleColumns] = useState({
     // Base columns (ID is always visible, not toggleable)
     storyTitle: true,
+    solveRate: dataset === 'true-detective',
     storyLengthWords: true,
     // True-detective specific columns
     suspects: dataset === 'true-detective',
     culprit: dataset === 'true-detective',
     o3GoldCulprits: true,
-    o3GoldAccomplices: true,
+    o3GoldAccomplices: dataset !== 'true-detective', // Hide for true-detective
     // Oracle columns
     oracleCulpritGuess: true,
     oracleAccompliceGuess: dataset !== 'true-detective', // Hide for true-detective
@@ -224,7 +225,7 @@ function StoryStats() {
       title: 'Basic Information',
       color: '#f0f9ff', // light blue
       columns: dataset === 'true-detective' 
-        ? ['storyTitle', 'storyLengthWords', 'suspects', 'culprit', 'o3GoldCulprits', 'o3GoldAccomplices']
+        ? ['storyTitle', 'solveRate', 'storyLengthWords', 'suspects', 'culprit', 'o3GoldCulprits']
         : ['storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
     },
     oracle: {
@@ -246,6 +247,7 @@ function StoryStats() {
   const columnLabels = {
     storyId: 'ID',
     storyTitle: 'Story Title',
+    solveRate: 'Solve Rate',
     storyLengthWords: 'Words',
     suspects: 'Suspects',
     culprit: 'Culprit',
