@@ -177,7 +177,7 @@ function StoriesList() {
           {displayedStories.map(story => (
             <Link 
               key={story.id} 
-              to={`/${dataset}/story/${story.id}`} 
+              to={`/${dataset}/story/${encodeURIComponent(story.id)}`} 
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div className="story-card">

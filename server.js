@@ -551,14 +551,24 @@ app.get('/api/:dataset/stories', validateDataset, (req, res) => {
 
           const story = {
             id: storyCode,
-            storyTitle: data.original_metadata?.story_annotations?.["Story Title"] || filename,
+            storyTitle: dataset === 'true-detective' 
+              ? (data.metadata?.event_name || filename)
+              : (data.original_metadata?.story_annotations?.["Story Title"] || filename),
             author: (() => {
-              const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-              const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
-              return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+              if (dataset === 'true-detective') {
+                return data.original_metadata?.author_name || 'Unknown Author';
+              } else {
+                // BMDS dataset
+                const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+                const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+                return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+              }
             })(),
+            storyCode: storyCode,
+            textLength: data.metadata?.story_length || 0,
             plotSummary: data.original_metadata?.plot_summary || 'No plot summary available',
             isSolvable: data.original_metadata?.story_annotations?.["Solvable?"] === "Yes",
+            model: data.metadata?.model || 'Unknown',
             publicationDate: publicationDate,
             summary: summary,
             storySummary: storySummary,
@@ -627,6 +637,9 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     const response = {
       ...data,
       id: id,
+      storyTitle: dataset === 'true-detective' 
+        ? (data.metadata?.event_name || id)
+        : (data.original_metadata?.story_annotations?.["Story Title"] || id),
       publicationDate: publicationDate,
       summary: summary,
       storySummary: storySummary,
@@ -660,11 +673,18 @@ app.get('/api/:dataset/search', validateDataset, (req, res) => {
           const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
           
           const storyCode = filename.replace('_detective_solution.json', '');
-          const storyTitle = data.original_metadata?.story_annotations?.["Story Title"] || filename;
+          const storyTitle = dataset === 'true-detective' 
+            ? (data.metadata?.event_name || filename)
+            : (data.original_metadata?.story_annotations?.["Story Title"] || filename);
           const author = (() => {
-            const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-            const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
-            return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+            if (dataset === 'true-detective') {
+              return data.original_metadata?.author_name || 'Unknown Author';
+            } else {
+              // BMDS dataset
+              const givenName = data.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+              const surname = data.original_metadata?.author_metadata?.["Surname(s)"] || '';
+              return [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+            }
           })();
           const plotSummary = data.original_metadata?.plot_summary || '';
           const publicationDate = data.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"] || '';
@@ -710,8 +730,11 @@ app.get('/api/:dataset/search', validateDataset, (req, res) => {
               id: storyCode,
               storyTitle: storyTitle,
               author: author,
+              storyCode: storyCode,
+              textLength: data.metadata?.story_length || 0,
               plotSummary: plotSummary,
               isSolvable: data.original_metadata?.story_annotations?.["Solvable?"] === "Yes",
+              model: data.metadata?.model || 'Unknown',
               publicationDate: publicationDate,
               summary: summary,
               storySummary: storySummary,
@@ -843,7 +866,9 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
 
           const statEntry = {
             storyId: storyCode,
-            storyTitle: data.original_metadata?.story_annotations?.["Story Title"] || storyCode,
+            storyTitle: dataset === 'true-detective' 
+              ? (data.metadata?.event_name || storyCode)
+              : (data.original_metadata?.story_annotations?.["Story Title"] || storyCode),
             storyLengthWords: storyLengthWords,
             o3GoldCulprits: o3GoldCulprits,
             o3GoldAccomplices: o3GoldAccomplices,

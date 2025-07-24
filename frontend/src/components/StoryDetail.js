@@ -23,7 +23,7 @@ function StoryDetail() {
   useEffect(() => {
     const fetchStory = async () => {
       try {
-        const response = await fetch(`/api/${dataset}/stories/${id}`);
+        const response = await fetch(`/api/${dataset}/stories/${encodeURIComponent(id)}`);
         if (!response.ok) throw new Error('Story not found');
         const data = await response.json();
         setStory(data);
@@ -66,7 +66,7 @@ function StoryDetail() {
         </header>
         <div className="container">
           <div className="error">Error: {error}</div>
-          <button className="back-button" onClick={() => navigate('/')}>
+          <button className="back-button" onClick={() => navigate(`/${dataset}`)}>
             Back to Stories
           </button>
         </div>
@@ -85,7 +85,7 @@ function StoryDetail() {
         </header>
         <div className="container">
           <div className="error">Story not found</div>
-          <button className="back-button" onClick={() => navigate('/')}>
+          <button className="back-button" onClick={() => navigate(`/${dataset}`)}>
             Back to Stories
           </button>
         </div>
@@ -101,7 +101,7 @@ function StoryDetail() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                 <button
-                  onClick={() => navigate(`/${dataset}`)}
+                  onClick={() => navigate('/')}
                   style={{
                     padding: '0.5rem',
                     backgroundColor: 'transparent',
@@ -112,19 +112,25 @@ function StoryDetail() {
                     fontSize: '0.875rem'
                   }}
                 >
-                  ← Back to Stories
+                  ← Back to Datasets
                 </button>
                 <h1 style={{ margin: 0 }}>{(() => {
-                  const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+                  const baseTitle = story.storyTitle || 'Unknown Title';
                   const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
                   return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
                 })()}</h1>
               </div>
               <p>by {(() => {
-                const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
-                const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
-                const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
-                return author;
+                // Handle different datasets
+                if (dataset === 'true-detective') {
+                  return story.original_metadata?.author_name || 'Unknown Author';
+                } else {
+                  // BMDS dataset
+                  const givenName = story.original_metadata?.author_metadata?.["Given Name(s)"] || '';
+                  const surname = story.original_metadata?.author_metadata?.["Surname(s)"] || '';
+                  const author = [givenName, surname].filter(name => name).join(' ') || 'Unknown Author';
+                  return author;
+                }
               })()}</p>
             </div>
             <button 
@@ -147,14 +153,14 @@ function StoryDetail() {
       </header>
 
       <div className="container">
-        <button className="back-button" onClick={() => navigate('/')}>
+        <button className="back-button" onClick={() => navigate(`/${dataset}`)}>
           ← Back to Stories
         </button>
 
         <div className="story-detail">
           <div className="story-detail-header">
             <h2>{(() => {
-              const baseTitle = story.original_metadata?.story_annotations?.["Story Title"] || 'Unknown Title';
+              const baseTitle = story.storyTitle || 'Unknown Title';
               const pubDate = story.original_metadata?.story_annotations?.["Date of First Publication (YYYY-MM-DD)"];
               return pubDate ? `${baseTitle} (${pubDate})` : baseTitle;
             })()}</h2>
@@ -209,83 +215,151 @@ function StoryDetail() {
                     backgroundColor: '#ffffff',
                     borderRadius: '0 0 8px 8px'
                   }}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Number of victims:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {(() => {
-                          const maleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Male"] || 0);
-                          const femaleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Female"] || 0);
-                          const nonBinaryVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Non-binary"] || 0);
-                          const unknownVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Unknown"] || 0);
-                          return maleVictims + femaleVictims + nonBinaryVictims + unknownVictims;
-                        })()}
-                      </span>
-                    </div>
+                    {dataset === 'true-detective' ? (
+                      // True Detective metadata
+                      <>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Solve rate:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.solve_rate ? `${story.original_metadata.solve_rate}%` : 'Unknown'}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Number of culprits:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {(() => {
-                          const maleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Male"] || 0);
-                          const femaleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Female"] || 0);
-                          const nonBinaryCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Non-binary"] || 0);
-                          const unknownCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Unknown"] || 0);
-                          return maleCulprits + femaleCulprits + nonBinaryCulprits + unknownCulprits;
-                        })()}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Number of attempts:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.attempts ? story.original_metadata.attempts.toLocaleString() : 'Unknown'}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Crimes:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {(() => {
-                          const focusCrime = story.original_metadata?.story_annotations?.["Focus on crime or quasi-crime"] || '';
-                          const crimeTypes = story.original_metadata?.story_annotations?.["Types of qrimes"] || '';
-                          const crimes = [focusCrime, crimeTypes].filter(crime => crime).join(', ');
-                          return crimes || 'Unknown';
-                        })()}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Suspects:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.answer_options || 'Unknown'}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Crime trajectory:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Crime trajectory"] || 'Unknown'}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Culprit:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.correct_answer || 'Unknown'}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Motives:</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Motives"] || 'Unknown'}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Source URL:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.case_url ? (
+                              <a 
+                                href={story.original_metadata.case_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                style={{ color: '#667eea', textDecoration: 'underline' }}
+                              >
+                                View Original Puzzle
+                              </a>
+                            ) : 'Unknown'}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Means (murder only):</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Means (murder only)"] || 'N/A'}
-                      </span>
-                    </div>
+                        <div>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Author URL:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.author_url ? (
+                              <a 
+                                href={story.original_metadata.author_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                style={{ color: '#667eea', textDecoration: 'underline' }}
+                              >
+                                View Author Profile
+                              </a>
+                            ) : 'Unknown'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      // BMDS dataset metadata
+                      <>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Number of victims:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {(() => {
+                              const maleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Male"] || 0);
+                              const femaleVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Female"] || 0);
+                              const nonBinaryVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Non-binary"] || 0);
+                              const unknownVictims = parseInt(story.original_metadata?.story_annotations?.["Number of victims of gender Unknown"] || 0);
+                              return maleVictims + femaleVictims + nonBinaryVictims + unknownVictims;
+                            })()}
+                          </span>
+                        </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Correct annotator guess?</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {story.original_metadata?.story_annotations?.["Correct annotator guess?"] || 'Unknown'}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Number of culprits:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {(() => {
+                              const maleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Male"] || 0);
+                              const femaleCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Female"] || 0);
+                              const nonBinaryCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Non-binary"] || 0);
+                              const unknownCulprits = parseInt(story.original_metadata?.story_annotations?.["Number of culprits of gender Unknown"] || 0);
+                              return maleCulprits + femaleCulprits + nonBinaryCulprits + unknownCulprits;
+                            })()}
+                          </span>
+                        </div>
 
-                    <div>
-                      <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Recommend?</strong>
-                      <span style={{ color: '#4a5568' }}>
-                        {(() => {
-                          const recommend = story.original_metadata?.story_annotations?.["Recommend to friend?"] || '';
-                          const satisfying = story.original_metadata?.story_annotations?.["How satisfying as detective fiction?"] || '';
-                          const combined = [recommend, satisfying].filter(item => item).join(' - ');
-                          return combined || 'Unknown';
-                        })()}
-                      </span>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Crimes:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {(() => {
+                              const focusCrime = story.original_metadata?.story_annotations?.["Focus on crime or quasi-crime"] || '';
+                              const crimeTypes = story.original_metadata?.story_annotations?.["Types of qrimes"] || '';
+                              const crimes = [focusCrime, crimeTypes].filter(crime => crime).join(', ');
+                              return crimes || 'Unknown';
+                            })()}
+                          </span>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Crime trajectory:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.story_annotations?.["Crime trajectory"] || 'Unknown'}
+                          </span>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Motives:</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.story_annotations?.["Motives"] || 'Unknown'}
+                          </span>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Means (murder only):</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.story_annotations?.["Means (murder only)"] || 'N/A'}
+                          </span>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Correct annotator guess?</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {story.original_metadata?.story_annotations?.["Correct annotator guess?"] || 'Unknown'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <strong style={{ color: '#2d3748', marginRight: '0.5rem' }}>Recommend?</strong>
+                          <span style={{ color: '#4a5568' }}>
+                            {(() => {
+                              const recommend = story.original_metadata?.story_annotations?.["Recommend to friend?"] || '';
+                              const satisfying = story.original_metadata?.story_annotations?.["How satisfying as detective fiction?"] || '';
+                              const combined = [recommend, satisfying].filter(item => item).join(' - ');
+                              return combined || 'Unknown';
+                            })()}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
