@@ -58,7 +58,7 @@ function StoriesList() {
       },
       'true-detective': {
         name: 'True Detective Dataset', 
-        description: 'Real detective cases and investigations with forensic evidence'
+        description: 'Short mystery puzzles from the True Detective dataset (@https://github.com/TartuNLP/true-detective )'
       },
       'musr': {
         name: 'MuSR Dataset',

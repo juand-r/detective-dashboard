@@ -24,7 +24,7 @@ const DATASETS = {
   },
   'true-detective': {
     name: 'True Detective Dataset',
-    description: 'Real detective cases and investigations with forensic evidence',
+    description: 'Short mystery puzzles from the True Detective dataset (@https://github.com/TartuNLP/true-detective )',
     detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/stories'),
     summariesDir: path.join(__dirname, 'data/true-detective/summaries'),
     solutionsV2Dir: path.join(__dirname, 'data/true-detective/v2-solutions') // Will create if needed
