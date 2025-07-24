@@ -870,6 +870,11 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
               ? (data.metadata?.event_name || storyCode)
               : (data.original_metadata?.story_annotations?.["Story Title"] || storyCode),
             storyLengthWords: storyLengthWords,
+            // Add true-detective specific fields
+            ...(dataset === 'true-detective' && {
+              suspects: data.original_metadata?.answer_options || '',
+              culprit: data.original_metadata?.correct_answer || ''
+            }),
             o3GoldCulprits: o3GoldCulprits,
             o3GoldAccomplices: o3GoldAccomplices,
             // Oracle data from without-reveal files

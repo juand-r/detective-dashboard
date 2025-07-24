@@ -174,18 +174,13 @@ function StoryDetail() {
           </div>
 
           <div className="story-detail-content">
-            {/* Plot Summary / Synopsis */}
-            <div className="plot-summary" style={{ marginBottom: '1.5rem' }}>
-              <div className="section-title">
-                {dataset === 'true-detective' ? 'Synopsis' : 'Plot Summary'}
+            {/* Plot Summary - Only show for BMDS dataset */}
+            {dataset !== 'true-detective' && (
+              <div className="plot-summary" style={{ marginBottom: '1.5rem' }}>
+                <div className="section-title">Plot Summary</div>
+                <p>{story.original_metadata?.plot_summary || 'No plot summary available.'}</p>
               </div>
-              <p>
-                {dataset === 'true-detective' 
-                  ? `${story.story?.full_text?.substring(0, 300) || 'No story text available'}...`
-                  : (story.original_metadata?.plot_summary || 'No plot summary available.')
-                }
-              </p>
-            </div>
+            )}
 
             {/* Clues & Evidence Section */}
             <div className="clues-evidence-section" style={{ marginBottom: '2rem' }}>
@@ -446,20 +441,23 @@ function StoryDetail() {
                 >
                   Story Text
                 </button>
-                <button
-                  onClick={() => setActiveTab('solution')}
-                  style={{
-                    padding: '1rem 2rem',
-                    border: 'none',
-                    background: activeTab === 'solution' ? '#667eea' : 'transparent',
-                    color: activeTab === 'solution' ? 'white' : '#4a5568',
-                    cursor: 'pointer',
-                    borderRadius: '8px 8px 0 0',
-                    fontWeight: activeTab === 'solution' ? '600' : 'normal'
-                  }}
-                >
-                  Solution (o3)
-                </button>
+                {/* Hide Solution (o3) tab for true-detective */}
+                {dataset !== 'true-detective' && (
+                  <button
+                    onClick={() => setActiveTab('solution')}
+                    style={{
+                      padding: '1rem 2rem',
+                      border: 'none',
+                      background: activeTab === 'solution' ? '#667eea' : 'transparent',
+                      color: activeTab === 'solution' ? 'white' : '#4a5568',
+                      cursor: 'pointer',
+                      borderRadius: '8px 8px 0 0',
+                      fontWeight: activeTab === 'solution' ? '600' : 'normal'
+                    }}
+                  >
+                    Solution (o3)
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveTab('solutionv2')}
                   style={{
@@ -570,118 +568,231 @@ function StoryDetail() {
               </div>
             )}
 
-            {activeTab === 'solutionv2' && (
+                        {activeTab === 'solutionv2' && (
               <div>
-                <div className="section-title">Solution v2 (o3-given-reveal)</div>
+                <div className="section-title">Solution v2</div>
                 <div className="solution-section">
-                  {story.solutionV2 ? (
-                    <div style={{ lineHeight: '1.8' }}>
-                      {(() => {
-                        const parseStructuredSolution = (solutionText) => {
-                          if (!solutionText || typeof solutionText !== 'string') {
-                            return [];
-                          }
-                          
-                          const sections = [];
-                          const tagPattern = /<([^>]+)>/g;
-                          const parts = solutionText.split(tagPattern);
-                          
-                          let currentSection = null;
-                          let currentContent = '';
-                          
-                          for (let i = 0; i < parts.length; i++) {
-                            const part = parts[i];
-                            
-                            if (i % 2 === 1) { // This is a tag
-                              // Skip closing tags (those that start with /)
-                              if (part.startsWith('/')) {
-                                continue;
-                              }
-                              
-                              // Save previous section if it exists
-                              if (currentSection) {
-                                sections.push({
-                                  title: currentSection,
-                                  content: currentContent.trim()
-                                });
-                              }
-                              
-                              // Start new section
-                              currentSection = part;
-                              currentContent = '';
-                            } else { // This is content
-                              currentContent += part;
+                  {dataset === 'true-detective' ? (
+                    // For true-detective: show the original solution (o3) content with structured parsing
+                    story.detection?.solution ? (
+                      <div style={{ lineHeight: '1.8' }}>
+                        {(() => {
+                          const parseStructuredSolution = (solutionText) => {
+                            if (!solutionText || typeof solutionText !== 'string') {
+                              return [];
                             }
-                          }
-                          
-                          // Add the last section
-                          if (currentSection && currentContent.trim()) {
-                            sections.push({
-                              title: currentSection,
-                              content: currentContent.trim()
-                            });
-                          }
-                          
-                          return sections;
-                        };
+                            
+                            const sections = [];
+                            const tagPattern = /<([^>]+)>/g;
+                            const parts = solutionText.split(tagPattern);
+                            
+                            let currentSection = null;
+                            let currentContent = '';
+                            
+                            for (let i = 0; i < parts.length; i++) {
+                              const part = parts[i];
+                              
+                              if (i % 2 === 1) { // This is a tag
+                                // Skip closing tags (those that start with /)
+                                if (part.startsWith('/')) {
+                                  continue;
+                                }
+                                
+                                // Save previous section if it exists
+                                if (currentSection) {
+                                  sections.push({
+                                    title: currentSection,
+                                    content: currentContent.trim()
+                                  });
+                                }
+                                
+                                // Start new section
+                                currentSection = part;
+                                currentContent = '';
+                              } else { // This is content
+                                currentContent += part;
+                              }
+                            }
+                            
+                            // Add the last section
+                            if (currentSection && currentContent.trim()) {
+                              sections.push({
+                                title: currentSection,
+                                content: currentContent.trim()
+                              });
+                            }
+                            
+                            return sections;
+                          };
 
-                        const sections = parseStructuredSolution(story.solutionV2);
-                        
-                        return (
-                          <div>
-                            {sections.map((section, index) => (
-                              <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                                <div 
-                                  onClick={() => toggleSection(`v2-${index}`)}
-                                  style={{
-                                    padding: '1rem',
-                                    backgroundColor: '#f8fafc',
-                                    borderBottom: collapsedSections[`v2-${index}`] ? 'none' : '1px solid #e2e8f0',
-                                    borderRadius: collapsedSections[`v2-${index}`] ? '8px' : '8px 8px 0 0',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    fontWeight: '600',
-                                    color: '#2d3748',
-                                    userSelect: 'none'
-                                  }}
-                                >
-                                  <span>{section.title}</span>
-                                  <span style={{ 
-                                    transform: collapsedSections[`v2-${index}`] ? 'rotate(0deg)' : 'rotate(90deg)',
-                                    transition: 'transform 0.2s ease',
-                                    fontSize: '1.2rem'
-                                  }}>
-                                    ▶
-                                  </span>
-                                </div>
-                                {!collapsedSections[`v2-${index}`] && (
-                                  <div style={{ 
-                                    padding: '1rem',
-                                    backgroundColor: '#ffffff',
-                                    borderRadius: '0 0 8px 8px'
-                                  }}>
-                                    <p style={{ 
-                                      margin: 0,
-                                      whiteSpace: 'pre-wrap',
-                                      color: '#4a5568'
+                          const sections = parseStructuredSolution(story.detection.solution);
+                          
+                          return (
+                            <div>
+                              {sections.map((section, index) => (
+                                <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                  <div 
+                                    onClick={() => toggleSection(`td-${index}`)}
+                                    style={{
+                                      padding: '1rem',
+                                      backgroundColor: '#f8fafc',
+                                      borderBottom: collapsedSections[`td-${index}`] ? 'none' : '1px solid #e2e8f0',
+                                      borderRadius: collapsedSections[`td-${index}`] ? '8px' : '8px 8px 0 0',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      fontWeight: '600',
+                                      color: '#2d3748',
+                                      userSelect: 'none'
+                                    }}
+                                  >
+                                    <span>{section.title}</span>
+                                    <span style={{ 
+                                      transform: collapsedSections[`td-${index}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                      transition: 'transform 0.2s ease',
+                                      fontSize: '1.2rem'
                                     }}>
-                                      {section.content}
-                                    </p>
+                                      ▶
+                                    </span>
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
+                                  {!collapsedSections[`td-${index}`] && (
+                                    <div style={{ 
+                                      padding: '1rem',
+                                      backgroundColor: '#ffffff',
+                                      borderRadius: '0 0 8px 8px'
+                                    }}>
+                                      <p style={{ 
+                                        margin: 0,
+                                        whiteSpace: 'pre-wrap',
+                                        color: '#4a5568'
+                                      }}>
+                                        {section.content}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                        No solution available for this story.
+                      </p>
+                    )
                   ) : (
-                    <p style={{ fontStyle: 'italic', color: '#718096' }}>
-                      No Solution v2 data available for this story.
-                    </p>
-                  )}
+                    // For BMDS: show the structured solution v2 content
+                    story.solutionV2 ? (
+                      <div style={{ lineHeight: '1.8' }}>
+                        {(() => {
+                          const parseStructuredSolution = (solutionText) => {
+                            if (!solutionText || typeof solutionText !== 'string') {
+                              return [];
+                            }
+                            
+                            const sections = [];
+                            const tagPattern = /<([^>]+)>/g;
+                            const parts = solutionText.split(tagPattern);
+                            
+                            let currentSection = null;
+                            let currentContent = '';
+                            
+                            for (let i = 0; i < parts.length; i++) {
+                              const part = parts[i];
+                              
+                              if (i % 2 === 1) { // This is a tag
+                                // Skip closing tags (those that start with /)
+                                if (part.startsWith('/')) {
+                                  continue;
+                                }
+                                
+                                // Save previous section if it exists
+                                if (currentSection) {
+                                  sections.push({
+                                    title: currentSection,
+                                    content: currentContent.trim()
+                                  });
+                                }
+                                
+                                // Start new section
+                                currentSection = part;
+                                currentContent = '';
+                              } else { // This is content
+                                currentContent += part;
+                              }
+                            }
+                            
+                            // Add the last section
+                            if (currentSection && currentContent.trim()) {
+                              sections.push({
+                                title: currentSection,
+                                content: currentContent.trim()
+                              });
+                            }
+                            
+                            return sections;
+                          };
+
+                          const sections = parseStructuredSolution(story.solutionV2);
+                          
+                          return (
+                            <div>
+                              {sections.map((section, index) => (
+                                <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                  <div 
+                                    onClick={() => toggleSection(`v2-${index}`)}
+                                    style={{
+                                      padding: '1rem',
+                                      backgroundColor: '#f8fafc',
+                                      borderBottom: collapsedSections[`v2-${index}`] ? 'none' : '1px solid #e2e8f0',
+                                      borderRadius: collapsedSections[`v2-${index}`] ? '8px' : '8px 8px 0 0',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      fontWeight: '600',
+                                      color: '#2d3748',
+                                      userSelect: 'none'
+                                    }}
+                                  >
+                                    <span>{section.title}</span>
+                                    <span style={{ 
+                                      transform: collapsedSections[`v2-${index}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                      transition: 'transform 0.2s ease',
+                                      fontSize: '1.2rem'
+                                    }}>
+                                      ▶
+                                    </span>
+                                  </div>
+                                  {!collapsedSections[`v2-${index}`] && (
+                                    <div style={{ 
+                                      padding: '1rem',
+                                      backgroundColor: '#ffffff',
+                                      borderRadius: '0 0 8px 8px'
+                                    }}>
+                                      <p style={{ 
+                                        margin: 0,
+                                        whiteSpace: 'pre-wrap',
+                                        color: '#4a5568'
+                                      }}>
+                                        {section.content}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                      ) : (
+                        <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                          No Solution v2 data available for this story.
+                        </p>
+                      )
+                    )}
                 </div>
               </div>
             )}

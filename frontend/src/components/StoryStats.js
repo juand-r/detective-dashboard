@@ -11,19 +11,22 @@ function StoryStats() {
     // Base columns (ID is always visible, not toggleable)
     storyTitle: true,
     storyLengthWords: true,
+    // True-detective specific columns
+    suspects: dataset === 'true-detective',
+    culprit: dataset === 'true-detective',
     o3GoldCulprits: true,
     o3GoldAccomplices: true,
     // Oracle columns
     oracleCulpritGuess: true,
-    oracleAccompliceGuess: true,
+    oracleAccompliceGuess: dataset !== 'true-detective', // Hide for true-detective
     culpritCorrect: true,
-    accompliceCorrect: true,
+    accompliceCorrect: dataset !== 'true-detective', // Hide for true-detective
     preRevealWords: true,
     // Concat+prompt columns
-    concatCulpritGuess: true,
-    concatAccompliceGuess: true,
+    concatCulpritGuess: true, // Put back for true-detective
+    concatAccompliceGuess: dataset !== 'true-detective', // Hide for true-detective
     concatCulpritCorrect: true,
-    concatAccompliceCorrect: true,
+    concatAccompliceCorrect: dataset !== 'true-detective', // Hide for true-detective
     concatPreRevealWords: true
   });
 
@@ -220,17 +223,23 @@ function StoryStats() {
     base: {
       title: 'Basic Information',
       color: '#f0f9ff', // light blue
-      columns: ['storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
+      columns: dataset === 'true-detective' 
+        ? ['storyTitle', 'storyLengthWords', 'suspects', 'culprit', 'o3GoldCulprits', 'o3GoldAccomplices']
+        : ['storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
     },
     oracle: {
       title: 'Oracle (Full Story)',
       color: '#f0fdf4', // light green  
-      columns: ['oracleCulpritGuess', 'oracleAccompliceGuess', 'culpritCorrect', 'accompliceCorrect', 'preRevealWords']
+      columns: dataset === 'true-detective' 
+        ? ['oracleCulpritGuess', 'culpritCorrect', 'preRevealWords']
+        : ['oracleCulpritGuess', 'oracleAccompliceGuess', 'culpritCorrect', 'accompliceCorrect', 'preRevealWords']
     },
     concat: {
       title: 'Concat+Prompt', 
       color: '#fefce8', // light yellow
-      columns: ['concatCulpritGuess', 'concatAccompliceGuess', 'concatCulpritCorrect', 'concatAccompliceCorrect', 'concatPreRevealWords']
+      columns: dataset === 'true-detective'
+        ? ['concatCulpritGuess', 'concatCulpritCorrect', 'concatPreRevealWords']
+        : ['concatCulpritGuess', 'concatAccompliceGuess', 'concatCulpritCorrect', 'concatAccompliceCorrect', 'concatPreRevealWords']
     }
   };
 
@@ -238,6 +247,8 @@ function StoryStats() {
     storyId: 'ID',
     storyTitle: 'Story Title',
     storyLengthWords: 'Words',
+    suspects: 'Suspects',
+    culprit: 'Culprit',
     o3GoldCulprits: 'o3 Gold Culprits',
     o3GoldAccomplices: 'o3 Gold Accomplices',
     oracleCulpritGuess: 'Oracle Culprit Guess',
@@ -527,13 +538,17 @@ function StoryStats() {
                           ) : (
                             <div style={{ 
                               maxWidth: columnKey === 'storyTitle' ? '200px' :
+                                        columnKey === 'suspects' ? '260px' :
                                         columnKey.includes('Words') || columnKey.includes('words') ? '80px' :
                                         columnKey.includes('Guess') ? '150px' : '120px', 
                               wordWrap: 'break-word',
-                              whiteSpace: columnKey.includes('Culprits') || columnKey.includes('Accomplices') ? 'pre-wrap' : 'normal',
+                              whiteSpace: columnKey.includes('Culprits') || columnKey.includes('Accomplices') || columnKey === 'suspects' ? 'pre-wrap' : 'normal',
                               textAlign: columnKey.includes('Words') || columnKey.includes('words') ? 'right' : 'left'
                             }}>
-                              {story[columnKey]}
+                              {columnKey === 'suspects' && story[columnKey] ? 
+                                story[columnKey].replace(/; \(/g, '\n(') : 
+                                story[columnKey]
+                              }
                             </div>
                           )}
                         </td>
