@@ -820,8 +820,8 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
           let oracleAccompliceGuess = '';
           try {
             if (dataset === 'true-detective') {
-              // For true-detective: read from detective_solutions-true-detective-without-reveal (same as concat for now)
-              const trueDetectiveWithoutRevealDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal');
+              // For true-detective: read from detective_solutions-true-detective-without-reveal-ONECULPRIT
+              const trueDetectiveWithoutRevealDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal-ONECULPRIT');
               const trueDetectiveWithoutRevealFileName = `${storyCode}_detective_solution.json`;
               const trueDetectiveWithoutRevealFilePath = path.join(trueDetectiveWithoutRevealDir, trueDetectiveWithoutRevealFileName);
               
