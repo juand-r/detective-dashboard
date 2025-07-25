@@ -25,7 +25,7 @@ const DATASETS = {
   'true-detective': {
     name: 'True Detective Dataset',
     description: 'Short mystery puzzles from the True Detective dataset (https://github.com/TartuNLP/true-detective )',
-    detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/stories'),
+    detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal'),
     summariesDir: path.join(__dirname, 'data/true-detective/summaries'),
     solutionsV2Dir: path.join(__dirname, 'data/true-detective/v2-solutions') // Will create if needed
   }
@@ -820,8 +820,8 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
           let oracleAccompliceGuess = '';
           try {
             if (dataset === 'true-detective') {
-              // For true-detective: read from detective_solutions-true-detective-without-reveal-ONECULPRIT
-              const trueDetectiveWithoutRevealDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal-ONECULPRIT');
+              // For true-detective: read from detective_solutions-true-detective-without-reveal
+              const trueDetectiveWithoutRevealDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal');
               const trueDetectiveWithoutRevealFileName = `${storyCode}_detective_solution.json`;
               const trueDetectiveWithoutRevealFilePath = path.join(trueDetectiveWithoutRevealDir, trueDetectiveWithoutRevealFileName);
               
@@ -829,10 +829,18 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
                 const trueDetectiveWithoutRevealData = JSON.parse(fs.readFileSync(trueDetectiveWithoutRevealFilePath, 'utf8'));
                 const solutionText = trueDetectiveWithoutRevealData.detection?.solution;
                 
-                // Parse culprit from the structured response (true-detective uses <CULPRIT> tags)
+                // Parse culprit from the structured response with fallback parsing
                 if (typeof solutionText === 'string') {
-                  const culpritMatch = solutionText.match(/<CULPRIT>(.*?)<\/CULPRIT>/s);
-                  oracleCulpritGuess = culpritMatch ? culpritMatch[1].trim() : '';
+                  // First try XML format: <MAIN CULPRIT(S)>content</MAIN CULPRIT(S)>
+                  let culpritMatch = solutionText.match(/<MAIN\s+CULPRIT\(S\)>(.*?)<\/MAIN\s+CULPRIT\(S\)>/s);
+                  
+                  if (culpritMatch) {
+                    oracleCulpritGuess = culpritMatch[1].trim();
+                  } else {
+                    // Fallback to plain text format: MAIN CULPRIT(S)\ncontent
+                    const plainMatch = solutionText.match(/MAIN\s+CULPRIT\(S\)\s*\n(.*?)(?:\n\n[A-Z]|\n[A-Z][A-Z\s]*\(S\)|$)/s);
+                    oracleCulpritGuess = plainMatch ? plainMatch[1].trim() : '';
+                  }
                   // True-detective doesn't typically have accomplices in this format
                   oracleAccompliceGuess = '';
                 }
@@ -947,7 +955,9 @@ app.get('/api/:dataset/stats', validateDataset, (req, res) => {
             concatAccompliceCorrect: storyAnnotations.concatAccompliceCorrect || '',
             concatPreRevealWords: preRevealWords, // Same as preRevealWords for now
             // Additional metadata
-            correctAnnotatorGuess: data.original_metadata?.story_annotations?.["Correct annotator guess"] || ''
+            correctAnnotatorGuess: data.original_metadata?.story_annotations?.["Correct annotator guess"] || '',
+            // GPT evaluation of culprit correctness
+            oracleCulpritGptCorrect: data.detection?.['correct?'] || ''
           };
 
           stats.push(statEntry);

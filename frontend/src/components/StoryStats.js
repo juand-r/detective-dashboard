@@ -20,6 +20,7 @@ function StoryStats() {
     // Oracle columns
     oracleCulpritGuess: true,
     oracleAccompliceGuess: dataset !== 'true-detective', // Hide for true-detective
+    oracleCulpritGptCorrect: true, // GPT evaluation of Oracle culprit correctness
     culpritCorrect: true,
     accompliceCorrect: dataset !== 'true-detective', // Hide for true-detective
     preRevealWords: true,
@@ -232,8 +233,8 @@ function StoryStats() {
       title: 'Oracle (Full Story)',
       color: '#f0fdf4', // light green  
       columns: dataset === 'true-detective' 
-        ? ['oracleCulpritGuess', 'culpritCorrect', 'preRevealWords']
-        : ['oracleCulpritGuess', 'oracleAccompliceGuess', 'culpritCorrect', 'accompliceCorrect', 'preRevealWords']
+        ? ['oracleCulpritGuess', 'oracleCulpritGptCorrect', 'culpritCorrect', 'preRevealWords']
+        : ['oracleCulpritGuess', 'oracleAccompliceGuess', 'oracleCulpritGptCorrect', 'culpritCorrect', 'accompliceCorrect', 'preRevealWords']
     },
     concat: {
       title: 'Concat+Prompt', 
@@ -254,7 +255,8 @@ function StoryStats() {
     o3GoldCulprits: 'o3 Gold Culprits',
     o3GoldAccomplices: 'o3 Gold Accomplices',
     oracleCulpritGuess: 'Oracle Culprit Guess',
-    oracleAccompliceGuess: 'Oracle Accomplice Guess', 
+    oracleAccompliceGuess: 'Oracle Accomplice Guess',
+    oracleCulpritGptCorrect: 'Culprit Correct?',
     culpritCorrect: 'Culprit Correct?',
     accompliceCorrect: 'Accomplice Correct?',
     preRevealWords: 'Words Pre-Reveal',
@@ -630,7 +632,7 @@ function StoryStats() {
               {dropdownOptions.map(option => {
                 return (
                   <tr key={`count-${option}`} style={{ backgroundColor: '#fef3c7' }}>
-                    {/* Story ID column with count label */}
+                    {/* Story ID column with count/fraction label */}
                     <td style={{
                       padding: '0.5rem',
                       borderTop: '1px solid #e5e7eb',
@@ -645,7 +647,8 @@ function StoryStats() {
                       backgroundColor: '#fde68a'
                     }}>
                       <div style={{ textAlign: 'left' }}>
-                        Count: {option}
+                        {dataset === 'true-detective' && (option === 'Yes' || option === 'No') ? 
+                          `Fraction ${option}` : `Count: ${option}`}
                       </div>
                     </td>
 
@@ -656,11 +659,18 @@ function StoryStats() {
                         const isLastColumnInGroup = index === visibleColumnsInGroup.length - 1;
                         const isLastGroup = groupKey === 'concat';
                         
-                        // Show count only for dropdown fields, empty for others
+                        // Show count/fraction for dropdown fields, empty for others
                         let displayValue = '';
-                        if (['culpritCorrect', 'accompliceCorrect', 'concatCulpritCorrect', 'concatAccompliceCorrect'].includes(columnKey)) {
+                        if (['oracleCulpritGptCorrect', 'culpritCorrect', 'accompliceCorrect', 'concatCulpritCorrect', 'concatAccompliceCorrect'].includes(columnKey)) {
                           const fieldCount = statsData.filter(story => story[columnKey] === option).length;
-                          displayValue = fieldCount > 0 ? fieldCount.toString() : '0';
+                          
+                          // For True Detective Yes/No options, show fractions; otherwise show counts
+                          if (dataset === 'true-detective' && (option === 'Yes' || option === 'No')) {
+                            const fraction = statsData.length > 0 ? fieldCount / statsData.length : 0;
+                            displayValue = fraction.toFixed(2);
+                          } else {
+                            displayValue = fieldCount > 0 ? fieldCount.toString() : '0';
+                          }
                         } else {
                           displayValue = '—'; // Em dash for non-applicable fields
                         }
