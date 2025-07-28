@@ -8,7 +8,8 @@ function StoryStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState({
-    // Base columns (ID is always visible, not toggleable)
+    // Base columns
+    storyId: true, // Make ID toggleable
     storyTitle: true,
     solveRate: dataset === 'true-detective',
     storyLengthWords: true,
@@ -226,8 +227,8 @@ function StoryStats() {
       title: 'Basic Information',
       color: '#f0f9ff', // light blue
       columns: dataset === 'true-detective' 
-        ? ['storyTitle', 'solveRate', 'storyLengthWords', 'suspects', 'culprit', 'o3GoldCulprits']
-        : ['storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
+        ? ['storyId', 'storyTitle', 'solveRate', 'storyLengthWords', 'suspects', 'culprit', 'o3GoldCulprits']
+        : ['storyId', 'storyTitle', 'storyLengthWords', 'o3GoldCulprits', 'o3GoldAccomplices']
     },
     oracle: {
       title: 'Oracle (Full Story)',
@@ -399,23 +400,25 @@ function StoryStats() {
               zIndex: 10
             }}>
               <tr>
-                {/* Always show Story ID column first */}
-                <th key="storyId" style={{
-                  padding: '0.75rem 0.5rem',
-                  backgroundColor: '#f0f9ff',
-                  borderBottom: '2px solid #d1d5db',
-                  borderRight: '1px solid #d1d5db',
-                  textAlign: 'left',
-                  fontWeight: '600',
-                  fontSize: '0.75rem',
-                  whiteSpace: 'nowrap',
-                  position: 'sticky',
-                  left: 0,
-                  zIndex: 20,
-                  minWidth: '60px'
-                }}>
-                  {columnLabels.storyId}
-                </th>
+                {/* Conditionally show Story ID column first */}
+                {visibleColumns.storyId && (
+                  <th key="storyId" style={{
+                    padding: '0.75rem 0.5rem',
+                    backgroundColor: '#f0f9ff',
+                    borderBottom: '2px solid #d1d5db',
+                    borderRight: '1px solid #d1d5db',
+                    textAlign: 'left',
+                    fontWeight: '600',
+                    fontSize: '0.75rem',
+                    whiteSpace: 'nowrap',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 20,
+                    minWidth: '60px'
+                  }}>
+                    {columnLabels.storyId}
+                  </th>
+                )}
                 
                 {/* Then show other visible columns */}
                 {Object.entries(columnGroups).map(([groupKey, group]) => 
@@ -436,7 +439,7 @@ function StoryStats() {
                         fontSize: '0.75rem',
                         whiteSpace: 'nowrap',
                         position: columnKey === 'storyTitle' ? 'sticky' : 'static',
-                        left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                        left: columnKey === 'storyTitle' ? (visibleColumns.storyId ? '60px' : '0px') : 'auto',
                         zIndex: columnKey === 'storyTitle' ? 20 : 'auto',
                         minWidth: columnKey === 'storyTitle' ? '200px' : 
                                   columnKey.includes('Words') || columnKey.includes('words') ? '80px' :
@@ -454,33 +457,35 @@ function StoryStats() {
                 <tr key={story.storyId} style={{
                   backgroundColor: rowIndex % 2 === 0 ? '#f9fafb' : 'white'
                 }}>
-                  {/* Always show Story ID column first */}
-                  <td key="storyId" style={{
-                    padding: '0.5rem',
-                    borderBottom: '1px solid #e5e7eb',
-                    borderRight: '1px solid #e5e7eb',
-                    verticalAlign: 'top',
-                    fontSize: '0.75rem',
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 15,
-                    backgroundColor: '#f0f9ff'
-                  }}>
-                                      <div style={{ textAlign: 'left' }}>
-                    <Link 
-                      to={`/${dataset}/story/${story.storyId}`}
-                      style={{ 
-                        color: '#1f2937',
-                        textDecoration: 'none',
-                        fontWeight: '500'
-                      }}
-                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                      >
-                        {story.storyId}
-                      </Link>
-                    </div>
-                  </td>
+                  {/* Conditionally show Story ID column first */}
+                  {visibleColumns.storyId && (
+                    <td key="storyId" style={{
+                      padding: '0.5rem',
+                      borderBottom: '1px solid #e5e7eb',
+                      borderRight: '1px solid #e5e7eb',
+                      verticalAlign: 'top',
+                      fontSize: '0.75rem',
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 15,
+                      backgroundColor: '#f0f9ff'
+                    }}>
+                      <div style={{ textAlign: 'left' }}>
+                        <Link 
+                          to={`/${dataset}/story/${story.storyId}`}
+                          style={{ 
+                            color: '#1f2937',
+                            textDecoration: 'none',
+                            fontWeight: '500'
+                          }}
+                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                        >
+                          {story.storyId}
+                        </Link>
+                      </div>
+                    </td>
+                  )}
 
                   {/* Then show other visible columns */}
                   {Object.entries(columnGroups).map(([groupKey, group]) => 
@@ -498,7 +503,7 @@ function StoryStats() {
                           verticalAlign: 'top',
                           fontSize: '0.75rem',
                           position: columnKey === 'storyTitle' ? 'sticky' : 'static',
-                          left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                          left: columnKey === 'storyTitle' ? (visibleColumns.storyId ? '60px' : '0px') : 'auto',
                           zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
                           backgroundColor: columnKey === 'storyTitle' ? '#f0f9ff' : 
                                          (rowIndex % 2 === 0 ? '#f9fafb' : 'white')
@@ -564,24 +569,26 @@ function StoryStats() {
               
               {/* Aggregate Statistics Row */}
               <tr style={{ backgroundColor: '#fef3c7' }}>
-                {/* Always show Story ID column first with "Avg." */}
-                <td key="storyId" style={{
-                  padding: '0.5rem',
-                  borderTop: '3px solid #d97706',
-                  borderBottom: '1px solid #e5e7eb',
-                  borderRight: '1px solid #e5e7eb',
-                  verticalAlign: 'top',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  position: 'sticky',
-                  left: 0,
-                  zIndex: 15,
-                  backgroundColor: '#fde68a'
-                }}>
-                  <div style={{ textAlign: 'left' }}>
-                    Avg.
-                  </div>
-                </td>
+                {/* Conditionally show Story ID column first with "Avg." */}
+                {visibleColumns.storyId && (
+                  <td key="storyId" style={{
+                    padding: '0.5rem',
+                    borderTop: '3px solid #d97706',
+                    borderBottom: '1px solid #e5e7eb',
+                    borderRight: '1px solid #e5e7eb',
+                    verticalAlign: 'top',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 15,
+                    backgroundColor: '#fde68a'
+                  }}>
+                    <div style={{ textAlign: 'left' }}>
+                      Avg.
+                    </div>
+                  </td>
+                )}
 
                 {/* Then show other visible columns */}
                 {Object.entries(columnGroups).map(([groupKey, group]) => 
@@ -613,7 +620,7 @@ function StoryStats() {
                         fontSize: '0.75rem',
                         fontWeight: '600',
                         position: columnKey === 'storyTitle' ? 'sticky' : 'static',
-                        left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                        left: columnKey === 'storyTitle' ? (visibleColumns.storyId ? '60px' : '0px') : 'auto',
                         zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
                         backgroundColor: columnKey === 'storyTitle' ? '#fde68a' : '#fef3c7'
                       }}>
@@ -632,25 +639,27 @@ function StoryStats() {
               {dropdownOptions.map(option => {
                 return (
                   <tr key={`count-${option}`} style={{ backgroundColor: '#fef3c7' }}>
-                    {/* Story ID column with count/fraction label */}
-                    <td style={{
-                      padding: '0.5rem',
-                      borderTop: '1px solid #e5e7eb',
-                      borderBottom: '1px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      verticalAlign: 'top',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      position: 'sticky',
-                      left: 0,
-                      zIndex: 15,
-                      backgroundColor: '#fde68a'
-                    }}>
-                      <div style={{ textAlign: 'left' }}>
-                        {dataset === 'true-detective' && (option === 'Yes' || option === 'No') ? 
-                          `Fraction ${option}` : `Count: ${option}`}
-                      </div>
-                    </td>
+                    {/* Conditionally show Story ID column with count/fraction label */}
+                    {visibleColumns.storyId && (
+                      <td style={{
+                        padding: '0.5rem',
+                        borderTop: '1px solid #e5e7eb',
+                        borderBottom: '1px solid #e5e7eb',
+                        borderRight: '1px solid #e5e7eb',
+                        verticalAlign: 'top',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 15,
+                        backgroundColor: '#fde68a'
+                      }}>
+                        <div style={{ textAlign: 'left' }}>
+                          {dataset === 'true-detective' && (option === 'Yes' || option === 'No') ? 
+                            `Fraction ${option}` : `Count: ${option}`}
+                        </div>
+                      </td>
+                    )}
 
                     {/* Show counts in appropriate columns */}
                     {Object.entries(columnGroups).map(([groupKey, group]) => 
@@ -686,7 +695,7 @@ function StoryStats() {
                             fontSize: '0.75rem',
                             fontWeight: '600',
                             position: columnKey === 'storyTitle' ? 'sticky' : 'static',
-                            left: columnKey === 'storyTitle' ? '60px' : 'auto',
+                            left: columnKey === 'storyTitle' ? (visibleColumns.storyId ? '60px' : '0px') : 'auto',
                             zIndex: columnKey === 'storyTitle' ? 15 : 'auto',
                             backgroundColor: columnKey === 'storyTitle' ? '#fde68a' : '#fef3c7'
                           }}>
