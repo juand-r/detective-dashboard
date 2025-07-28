@@ -10,7 +10,7 @@ function StoryDetail() {
   const [collapsedSections, setCollapsedSections] = useState({
     'crime-info': true,  // Crime Information section closed by default
     'clues-info': true,   // Clues section closed by default
-    'story-solution': false, // Story Text + Solution v2 open by default
+    'story-solution': true,  // Story Text + Solution v2 closed by default
     'reveal-segment': true,  // Reveal segment closed by default
     'solution-v2': true,     // Solution v2 collapsed by default
     'concat-summary': true,  // Summary concat closed by default
