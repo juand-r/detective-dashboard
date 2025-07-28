@@ -15,7 +15,12 @@ function StoryDetail() {
     'solution-v2': true,     // Solution v2 collapsed by default
     'concat-summary': true,  // Summary concat closed by default
     'concat-solution': true, // Summary concat solution collapsed by default
-    'iterative-summary': true // Summary iterative closed by default
+    'iterative-summary': true, // Summary iterative closed by default
+    'interim-summary-1': true, // Interim summary 1 closed by default
+    'interim-summary-2': true, // Interim summary 2 closed by default
+    'interim-summary-3': true, // Interim summary 3 closed by default
+    'final-summary': true,     // Final summary closed by default
+    'iterative-solution': true // Iterative solution collapsed by default
   });
 
   const toggleSection = (sectionName) => {
@@ -1087,35 +1092,181 @@ function StoryDetail() {
                 {!collapsedSections['iterative-summary'] && (
                   <div style={{ padding: '1.5rem', backgroundColor: '#f0f9f0', borderRadius: '0 0 8px 8px' }}>
                     <div style={{ display: 'flex', gap: '2rem' }}>
-                      <div style={{ flex: 1 }}>
+                                            <div style={{ flex: 1 }}>
                         <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k iterative</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
+                        <div>
                           {dataset === 'true-detective' ? (
-                            <p style={{ fontStyle: 'italic', color: '#718096' }}>
-                              No iterative summary data available for true-detective dataset.
-                            </p>
-                          ) : (
-                            // For BMDS: show the iterative summary content
-                            story.iterativeSummary ? (
-                              <div style={{ lineHeight: '1.8' }}>
-                                {story.iterativeSummary.split('\n').map((paragraph, index) => (
-                                  <p key={index} style={{ marginBottom: '1rem' }}>
-                                    {paragraph}
-                                  </p>
-                                ))}
-                              </div>
-                            ) : (
-                              <p style={{ fontStyle: 'italic', color: '#718096' }}>
-                                No iterative summary data available for this story.
+                            <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
+                              <p style={{ fontStyle: 'italic', color: '#718096', margin: '0' }}>
+                                No iterative summary data available for true-detective dataset.
                               </p>
-                            )
+                            </div>
+                          ) : (
+                            <div>
+                              {/* Separate Interim Summary Dropdowns */}
+                              {story.iterativeChunkSummaries && story.iterativeChunkSummaries.length > 1 ? (
+                                story.iterativeChunkSummaries.slice(0, -1).map((chunkSummary, index) => (
+                                  <div key={index} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '1rem' }}>
+                                    <div 
+                                      onClick={() => toggleSection(`interim-summary-${index + 1}`)}
+                                      style={{
+                                        padding: '0.75rem',
+                                        backgroundColor: '#f8f9fa',
+                                        borderRadius: collapsedSections[`interim-summary-${index + 1}`] ? '6px' : '6px 6px 0 0',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        fontWeight: '500',
+                                        fontSize: '0.9rem',
+                                        color: '#374151',
+                                        userSelect: 'none',
+                                        borderBottom: collapsedSections[`interim-summary-${index + 1}`] ? 'none' : '1px solid #e2e8f0'
+                                      }}
+                                    >
+                                      <span>Interim summary {index + 1}</span>
+                                      <span style={{ 
+                                        transform: collapsedSections[`interim-summary-${index + 1}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                        transition: 'transform 0.2s ease',
+                                        fontSize: '0.8rem'
+                                      }}>
+                                        ▶
+                                      </span>
+                                    </div>
+                                    {!collapsedSections[`interim-summary-${index + 1}`] && (
+                                      <div style={{ 
+                                        padding: '1rem',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '0 0 6px 6px',
+                                        fontSize: '0.9rem',
+                                        lineHeight: '1.6'
+                                      }}>
+                                        <div style={{ color: '#4b5563' }}>
+                                          {chunkSummary.split('\n').map((paragraph, pIndex) => (
+                                            <p key={pIndex} style={{ marginBottom: pIndex === chunkSummary.split('\n').length - 1 ? '0' : '1rem' }}>
+                                              {paragraph}
+                                            </p>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              ) : null}
+                              
+                              {/* Final Summary Dropdown */}
+                              <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                                <div 
+                                  onClick={() => toggleSection('final-summary')}
+                                  style={{
+                                    padding: '0.75rem',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: collapsedSections['final-summary'] ? '6px' : '6px 6px 0 0',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    fontWeight: '500',
+                                    fontSize: '0.9rem',
+                                    color: '#374151',
+                                    userSelect: 'none',
+                                    borderBottom: collapsedSections['final-summary'] ? 'none' : '1px solid #e2e8f0'
+                                  }}
+                                >
+                                  <span>Final Summary</span>
+                                  <span style={{ 
+                                    transform: collapsedSections['final-summary'] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                    transition: 'transform 0.2s ease',
+                                    fontSize: '0.8rem'
+                                  }}>
+                                    ▶
+                                  </span>
+                                </div>
+                                {!collapsedSections['final-summary'] && (
+                                  <div style={{ 
+                                    padding: '1rem',
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '0 0 6px 6px',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                  }}>
+                                    {story.iterativeSummary ? (
+                                      <div style={{ color: '#4b5563' }}>
+                                        {story.iterativeSummary.split('\n').map((paragraph, index) => (
+                                          <p key={index} style={{ marginBottom: index === story.iterativeSummary.split('\n').length - 1 ? '0' : '1rem' }}>
+                                            {paragraph}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p style={{ fontStyle: 'italic', color: '#718096', margin: '0' }}>
+                                        No iterative summary data available for this story.
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k iterative solution</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
-                          <p>Mock content for Summary 1k iterative solution. This would contain the solution based on the iterative summary.</p>
+                      {/* Summary 1k iterative solution Section (Right Side) - Horizontally Collapsible */}
+                      <div style={{ 
+                        flex: collapsedSections['iterative-solution'] ? '0 0 40px' : '1',
+                        transition: 'flex 0.3s ease',
+                        minWidth: collapsedSections['iterative-solution'] ? '40px' : 'auto'
+                      }}>
+                        {/* Summary 1k iterative solution as horizontally collapsible section */}
+                        <div style={{ 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '8px',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: collapsedSections['iterative-solution'] ? 'column' : 'column'
+                        }}>
+                          <div 
+                            onClick={() => toggleSection('iterative-solution')}
+                            style={{
+                              padding: collapsedSections['iterative-solution'] ? '1rem 0.5rem' : '1rem',
+                              backgroundColor: '#f8fafc',
+                              borderBottom: collapsedSections['iterative-solution'] ? 'none' : '1px solid #e2e8f0',
+                              borderRadius: collapsedSections['iterative-solution'] ? '8px' : '8px 8px 0 0',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: collapsedSections['iterative-solution'] ? 'center' : 'space-between',
+                              alignItems: 'center',
+                              fontWeight: '600',
+                              color: '#2d3748',
+                              userSelect: 'none',
+                              writingMode: collapsedSections['iterative-solution'] ? 'vertical-rl' : 'horizontal-tb',
+                              textOrientation: collapsedSections['iterative-solution'] ? 'mixed' : 'unset',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <span style={{ fontSize: collapsedSections['iterative-solution'] ? '0.9rem' : '1rem' }}>
+                              {collapsedSections['iterative-solution'] ? 'Iter Sol' : 'Summary 1k iterative solution'}
+                            </span>
+                            {!collapsedSections['iterative-solution'] && (
+                              <span style={{ 
+                                transform: 'rotate(90deg)',
+                                transition: 'transform 0.2s ease',
+                                fontSize: '1.2rem'
+                              }}>
+                                ▶
+                              </span>
+                            )}
+                          </div>
+                          {!collapsedSections['iterative-solution'] && (
+                            <div style={{ 
+                              padding: '1.5rem',
+                              backgroundColor: '#ffffff',
+                              borderRadius: '0 0 8px 8px'
+                            }}>
+                              <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', backgroundColor: '#ffffff' }}>
+                                <p>Mock content for Summary 1k iterative solution. This would contain the solution based on the iterative summary.</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

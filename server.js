@@ -668,6 +668,7 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     
     // Try to read corresponding iterative summary file (for BMDS dataset)
     let iterativeSummary = null;
+    let iterativeChunkSummaries = null;
     try {
       if (dataset === 'bmds') {
         const iterativeSummaryDir = path.join(__dirname, 'data/bmds/summaries/iterative_4chunks');
@@ -676,6 +677,10 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
         if (fs.existsSync(iterativeSummaryFilePath)) {
           const iterativeSummaryData = JSON.parse(fs.readFileSync(iterativeSummaryFilePath, 'utf8'));
           iterativeSummary = iterativeSummaryData.final_summary || null;
+          // Extract chunk summaries from the chunks array
+          if (iterativeSummaryData.chunks && Array.isArray(iterativeSummaryData.chunks)) {
+            iterativeChunkSummaries = iterativeSummaryData.chunks.map(chunk => chunk.summary).filter(summary => summary);
+          }
         }
       }
     } catch (error) {
@@ -704,7 +709,8 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       solutionV2: solutionV2,
       concatSolution: concatSolution,
       concatSummary: concatSummary,
-      iterativeSummary: iterativeSummary
+      iterativeSummary: iterativeSummary,
+      iterativeChunkSummaries: iterativeChunkSummaries
     };
 
     res.json(response);
