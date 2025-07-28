@@ -14,6 +14,7 @@ function StoryDetail() {
     'reveal-segment': true,  // Reveal segment closed by default
     'solution-v2': true,     // Solution v2 collapsed by default
     'concat-summary': true,  // Summary concat closed by default
+    'concat-solution': true, // Summary concat solution collapsed by default
     'iterative-summary': true // Summary iterative closed by default
   });
 
@@ -829,7 +830,7 @@ function StoryDetail() {
                   onClick={() => toggleSection('concat-summary')}
                   style={{
                     padding: '1rem',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#d4f4d4',
                     borderBottom: collapsedSections['concat-summary'] ? 'none' : '1px solid #e2e8f0',
                     borderRadius: collapsedSections['concat-summary'] ? '8px' : '8px 8px 0 0',
                     cursor: 'pointer',
@@ -851,18 +852,204 @@ function StoryDetail() {
                   </span>
                 </div>
                 {!collapsedSections['concat-summary'] && (
-                  <div style={{ padding: '1.5rem', backgroundColor: '#ffffff', borderRadius: '0 0 8px 8px' }}>
+                  <div style={{ padding: '1.5rem', backgroundColor: '#f0f9f0', borderRadius: '0 0 8px 8px' }}>
                     <div style={{ display: 'flex', gap: '2rem' }}>
                       <div style={{ flex: 1 }}>
                         <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k concat</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                          <p>Mock content for Summary 1k concat. This would contain the concatenated 1k word summary of the story.</p>
+                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
+                          {dataset === 'true-detective' ? (
+                            <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                              No concat summary data available for true-detective dataset.
+                            </p>
+                          ) : (
+                            // For BMDS: show the concat summary content
+                            story.concatSummary ? (
+                              <div style={{ lineHeight: '1.8' }}>
+                                {story.concatSummary.split('\n').map((paragraph, index) => (
+                                  <p key={index} style={{ marginBottom: '1rem' }}>
+                                    {paragraph}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                No concat summary data available for this story.
+                              </p>
+                            )
+                          )}
                         </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k concat solution</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                          <p>Mock content for Summary 1k concat solution. This would contain the solution based on the concatenated summary.</p>
+                      {/* Summary 1k concat solution Section (Right Side) - Horizontally Collapsible */}
+                      <div style={{ 
+                        flex: collapsedSections['concat-solution'] ? '0 0 40px' : '1',
+                        transition: 'flex 0.3s ease',
+                        minWidth: collapsedSections['concat-solution'] ? '40px' : 'auto'
+                      }}>
+                        {/* Summary 1k concat solution as horizontally collapsible section */}
+                        <div style={{ 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '8px',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: collapsedSections['concat-solution'] ? 'column' : 'column'
+                        }}>
+                          <div 
+                            onClick={() => toggleSection('concat-solution')}
+                            style={{
+                              padding: collapsedSections['concat-solution'] ? '1rem 0.5rem' : '1rem',
+                              backgroundColor: '#f8fafc',
+                              borderBottom: collapsedSections['concat-solution'] ? 'none' : '1px solid #e2e8f0',
+                              borderRadius: collapsedSections['concat-solution'] ? '8px' : '8px 8px 0 0',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: collapsedSections['concat-solution'] ? 'center' : 'space-between',
+                              alignItems: 'center',
+                              fontWeight: '600',
+                              color: '#2d3748',
+                              userSelect: 'none',
+                              writingMode: collapsedSections['concat-solution'] ? 'vertical-rl' : 'horizontal-tb',
+                              textOrientation: collapsedSections['concat-solution'] ? 'mixed' : 'unset',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <span style={{ fontSize: collapsedSections['concat-solution'] ? '0.9rem' : '1rem' }}>
+                              {collapsedSections['concat-solution'] ? 'Sol 1k' : 'Summary 1k concat solution'}
+                            </span>
+                            {!collapsedSections['concat-solution'] && (
+                              <span style={{ 
+                                transform: 'rotate(90deg)',
+                                transition: 'transform 0.2s ease',
+                                fontSize: '1.2rem'
+                              }}>
+                                ▶
+                              </span>
+                            )}
+                          </div>
+                          {!collapsedSections['concat-solution'] && (
+                            <div style={{ 
+                              padding: '1.5rem',
+                              backgroundColor: '#ffffff',
+                              borderRadius: '0 0 8px 8px'
+                            }}>
+                              <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', backgroundColor: '#ffffff' }}>
+                          {dataset === 'true-detective' ? (
+                            <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                              No concat solution data available for true-detective dataset.
+                            </p>
+                          ) : (
+                            // For BMDS: show the structured concat solution content  
+                            story.concatSolution ? (
+                              <div style={{ lineHeight: '1.8' }}>
+                                {(() => {
+                                  const parseStructuredSolution = (solutionText) => {
+                                    if (!solutionText || typeof solutionText !== 'string') {
+                                      return [];
+                                    }
+                                    
+                                    const sections = [];
+                                    const tagPattern = /<([^>]+)>/g;
+                                    const parts = solutionText.split(tagPattern);
+                                    
+                                    let currentSection = null;
+                                    let currentContent = '';
+                                    
+                                    for (let i = 0; i < parts.length; i++) {
+                                      const part = parts[i];
+                                      
+                                      if (i % 2 === 1) { // This is a tag
+                                        // Skip closing tags (those that start with /)
+                                        if (part.startsWith('/')) {
+                                          continue;
+                                        }
+                                        
+                                        // Save previous section if it exists
+                                        if (currentSection) {
+                                          sections.push({
+                                            title: currentSection,
+                                            content: currentContent.trim()
+                                          });
+                                        }
+                                        
+                                        // Start new section
+                                        currentSection = part;
+                                        currentContent = '';
+                                      } else { // This is content
+                                        currentContent += part;
+                                      }
+                                    }
+                                    
+                                    // Add the last section
+                                    if (currentSection && currentContent.trim()) {
+                                      sections.push({
+                                        title: currentSection,
+                                        content: currentContent.trim()
+                                      });
+                                    }
+                                    
+                                    return sections;
+                                  };
+
+                                  const sections = parseStructuredSolution(story.concatSolution);
+                                  
+                                  return (
+                                    <div>
+                                      {sections.map((section, index) => (
+                                        <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                          <div 
+                                            onClick={() => toggleSection(`concat-${index}`)}
+                                            style={{
+                                              padding: '1rem',
+                                              backgroundColor: '#f8fafc',
+                                              borderBottom: collapsedSections[`concat-${index}`] ? 'none' : '1px solid #e2e8f0',
+                                              borderRadius: collapsedSections[`concat-${index}`] ? '8px' : '8px 8px 0 0',
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              justifyContent: 'space-between',
+                                              alignItems: 'center',
+                                              fontWeight: '600',
+                                              color: '#2d3748',
+                                              userSelect: 'none'
+                                            }}
+                                          >
+                                            <span>{section.title}</span>
+                                            <span style={{ 
+                                              transform: collapsedSections[`concat-${index}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                              transition: 'transform 0.2s ease',
+                                              fontSize: '1.2rem'
+                                            }}>
+                                              ▶
+                                            </span>
+                                          </div>
+                                          {!collapsedSections[`concat-${index}`] && (
+                                            <div style={{ 
+                                              padding: '1rem',
+                                              backgroundColor: '#ffffff',
+                                              borderRadius: '0 0 8px 8px'
+                                            }}>
+                                              <p style={{ 
+                                                margin: 0,
+                                                whiteSpace: 'pre-wrap',
+                                                color: '#4a5568'
+                                              }}>
+                                                {section.content}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                No concat solution data available for this story.
+                              </p>
+                            )
+                          )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -876,7 +1063,7 @@ function StoryDetail() {
                   onClick={() => toggleSection('iterative-summary')}
                   style={{
                     padding: '1rem',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#d4f4d4',
                     borderBottom: collapsedSections['iterative-summary'] ? 'none' : '1px solid #e2e8f0',
                     borderRadius: collapsedSections['iterative-summary'] ? '8px' : '8px 8px 0 0',
                     cursor: 'pointer',
@@ -898,21 +1085,21 @@ function StoryDetail() {
                   </span>
                 </div>
                 {!collapsedSections['iterative-summary'] && (
-                  <div style={{ padding: '1.5rem', backgroundColor: '#ffffff', borderRadius: '0 0 8px 8px' }}>
+                  <div style={{ padding: '1.5rem', backgroundColor: '#f0f9f0', borderRadius: '0 0 8px 8px' }}>
                     <div style={{ display: 'flex', gap: '2rem' }}>
                       <div style={{ flex: 1 }}>
                         <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k iterative</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
                           <p>Mock content for Summary 1k iterative. This would contain the iterative 1k word summary of the story.</p>
-                </div>
-              </div>
+                        </div>
+                      </div>
                       <div style={{ flex: 1 }}>
                         <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k iterative solution</div>
-                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                        <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
                           <p>Mock content for Summary 1k iterative solution. This would contain the solution based on the iterative summary.</p>
-                  </div>
-                </div>
-              </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

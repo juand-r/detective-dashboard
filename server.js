@@ -633,6 +633,38 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     } catch (error) {
       console.log(`Warning: Could not read v2 solution for ${id}:`, error.message);
     }
+    
+    // Try to read corresponding concat solution file (for BMDS dataset)
+    let concatSolution = null;
+    try {
+      if (dataset === 'bmds') {
+        const concatSolutionDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-600-900-words-v2');
+        const concatFileName = `${id}_detective_solution.json`;
+        const concatFilePath = path.join(concatSolutionDir, concatFileName);
+        if (fs.existsSync(concatFilePath)) {
+          const concatData = JSON.parse(fs.readFileSync(concatFilePath, 'utf8'));
+          concatSolution = concatData.detection?.solution || null;
+        }
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read concat solution for ${id}:`, error.message);
+    }
+    
+    // Try to read corresponding concat summary file (for BMDS dataset)
+    let concatSummary = null;
+    try {
+      if (dataset === 'bmds') {
+        const concatSummaryDir = path.join(__dirname, 'data/bmds/summaries/summaries-concat-1k-v0');
+        const concatSummaryFileName = `${id}_latest_full_document_response.json`;
+        const concatSummaryFilePath = path.join(concatSummaryDir, concatSummaryFileName);
+        if (fs.existsSync(concatSummaryFilePath)) {
+          const concatSummaryData = JSON.parse(fs.readFileSync(concatSummaryFilePath, 'utf8'));
+          concatSummary = concatSummaryData.final_summary || null;
+        }
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read concat summary for ${id}:`, error.message);
+    }
 
     // For True Detective: use mystery_text and reveal_text for proper separation
     if (dataset === 'true-detective') {
@@ -653,7 +685,9 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       publicationDate: publicationDate,
       summary: summary,
       storySummary: storySummary,
-      solutionV2: solutionV2
+      solutionV2: solutionV2,
+      concatSolution: concatSolution,
+      concatSummary: concatSummary
     };
 
     res.json(response);
