@@ -441,23 +441,7 @@ function StoryDetail() {
                 >
                   Story Text
                 </button>
-                {/* Hide Solution (o3) tab for true-detective */}
-                {dataset !== 'true-detective' && (
-                <button
-                  onClick={() => setActiveTab('solution')}
-                  style={{
-                    padding: '1rem 2rem',
-                    border: 'none',
-                    background: activeTab === 'solution' ? '#667eea' : 'transparent',
-                    color: activeTab === 'solution' ? 'white' : '#4a5568',
-                    cursor: 'pointer',
-                    borderRadius: '8px 8px 0 0',
-                    fontWeight: activeTab === 'solution' ? '600' : 'normal'
-                  }}
-                >
-                  Solution (o3)
-                  </button>
-                )}
+
                 <button
                   onClick={() => setActiveTab('solutionv2')}
                   style={{
@@ -472,20 +456,7 @@ function StoryDetail() {
                 >
                   Solution v2
                 </button>
-                <button
-                  onClick={() => setActiveTab('summary')}
-                  style={{
-                    padding: '1rem 2rem',
-                    border: 'none',
-                    background: activeTab === 'summary' ? '#667eea' : 'transparent',
-                    color: activeTab === 'summary' ? 'white' : '#4a5568',
-                    cursor: 'pointer',
-                    borderRadius: '8px 8px 0 0',
-                    fontWeight: activeTab === 'summary' ? '600' : 'normal'
-                  }}
-                >
-                  Summary (concat-1kwords-v0)
-                </button>
+
               </div>
             </div>
 
@@ -551,22 +522,7 @@ function StoryDetail() {
               </div>
             )}
 
-            {activeTab === 'solution' && (
-              <div>
-                <div className="section-title">Solution (o3)</div>
-                <div className="solution-section">
-                  {story.detection?.solution ? (
-                    <div style={{ lineHeight: '1.8' }}>
-                      {story.detection.solution}
-                  </div>
-                  ) : (
-                    <p style={{ fontStyle: 'italic', color: '#718096' }}>
-                      No solution available for this story.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+
 
                         {activeTab === 'solutionv2' && (
               <div>
@@ -797,26 +753,7 @@ function StoryDetail() {
               </div>
             )}
 
-            {activeTab === 'summary' && (
-              <div>
-                <div className="section-title">Summary (concat-1kwords-v0)</div>
-                <div className="story-text">
-                  {story.storySummary ? (
-                    <div style={{ lineHeight: '1.6' }}>
-                      {story.storySummary.split('\n').map((paragraph, index) => (
-                        <p key={index} style={{ marginBottom: '1rem' }}>
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#666' }}>
-                      No summary available for this story
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>
