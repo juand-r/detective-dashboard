@@ -665,6 +665,22 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     } catch (error) {
       console.log(`Warning: Could not read concat summary for ${id}:`, error.message);
     }
+    
+    // Try to read corresponding iterative summary file (for BMDS dataset)
+    let iterativeSummary = null;
+    try {
+      if (dataset === 'bmds') {
+        const iterativeSummaryDir = path.join(__dirname, 'data/bmds/summaries/iterative_4chunks');
+        const iterativeSummaryFileName = `${id}_latest_iterative_4chunks_response.json`;
+        const iterativeSummaryFilePath = path.join(iterativeSummaryDir, iterativeSummaryFileName);
+        if (fs.existsSync(iterativeSummaryFilePath)) {
+          const iterativeSummaryData = JSON.parse(fs.readFileSync(iterativeSummaryFilePath, 'utf8'));
+          iterativeSummary = iterativeSummaryData.final_summary || null;
+        }
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read iterative summary for ${id}:`, error.message);
+    }
 
     // For True Detective: use mystery_text and reveal_text for proper separation
     if (dataset === 'true-detective') {
@@ -687,7 +703,8 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       storySummary: storySummary,
       solutionV2: solutionV2,
       concatSolution: concatSolution,
-      concatSummary: concatSummary
+      concatSummary: concatSummary,
+      iterativeSummary: iterativeSummary
     };
 
     res.json(response);

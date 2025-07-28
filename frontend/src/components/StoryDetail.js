@@ -1090,7 +1090,26 @@ function StoryDetail() {
                       <div style={{ flex: 1 }}>
                         <div className="section-title" style={{ marginBottom: '1rem' }}>Summary 1k iterative</div>
                         <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
-                          <p>Mock content for Summary 1k iterative. This would contain the iterative 1k word summary of the story.</p>
+                          {dataset === 'true-detective' ? (
+                            <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                              No iterative summary data available for true-detective dataset.
+                            </p>
+                          ) : (
+                            // For BMDS: show the iterative summary content
+                            story.iterativeSummary ? (
+                              <div style={{ lineHeight: '1.8' }}>
+                                {story.iterativeSummary.split('\n').map((paragraph, index) => (
+                                  <p key={index} style={{ marginBottom: '1rem' }}>
+                                    {paragraph}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                No iterative summary data available for this story.
+                              </p>
+                            )
+                          )}
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
