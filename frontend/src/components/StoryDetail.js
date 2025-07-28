@@ -466,11 +466,21 @@ function StoryDetail() {
                 <div className="section-title">Story Text</div>
                 <div className="story-content" style={{ lineHeight: '1.8' }}>
                   {story.story?.full_text ? 
-                    story.story.full_text.split('\n').map((paragraph, index) => (
-                      <p key={index} style={{ marginBottom: '1rem' }}>
-                        {paragraph}
-                      </p>
-                    )) : 
+                    (() => {
+                      // Remove the reveal segment from the full text using border_sentence
+                      let storyText = story.story.full_text;
+                      if (story.story?.border_sentence) {
+                        const borderIndex = storyText.indexOf(story.story.border_sentence);
+                        if (borderIndex !== -1) {
+                          storyText = storyText.substring(0, borderIndex).trim();
+                        }
+                      }
+                      return storyText.split('\n').map((paragraph, index) => (
+                        <p key={index} style={{ marginBottom: '1rem' }}>
+                          {paragraph}
+                        </p>
+                      ));
+                    })() : 
                     'No story text available'
                   }
                 </div>
@@ -508,13 +518,20 @@ function StoryDetail() {
                       backgroundColor: '#ffffff',
                       borderRadius: '0 0 8px 8px'
                     }}>
-                      {story.metadata?.border_sentence && (
-                        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#e2e8f0', borderRadius: '8px' }}>
-                          <strong>Border sentence:</strong> "{story.metadata.border_sentence}"
-                        </div>
-                      )}
+                {story.metadata?.border_sentence && (
+                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#e2e8f0', borderRadius: '8px' }}>
+                    <strong>Border sentence:</strong> "{story.metadata.border_sentence}"
+                  </div>
+                )}
                       <div style={{ lineHeight: '1.8' }}>
-                        {story.story?.reveal_segment || 'No reveal segment available'}
+                  {story.story?.reveal_segment ? 
+                    story.story.reveal_segment.split('\n').map((paragraph, index) => (
+                      <p key={index} style={{ marginBottom: '1rem' }}>
+                        {paragraph}
+                      </p>
+                    )) : 
+                    'No reveal segment available'
+                  }
                       </div>
                     </div>
                   )}
@@ -628,8 +645,8 @@ function StoryDetail() {
                                     </div>
                                   )}
                                 </div>
-                              ))}
-                            </div>
+                      ))}
+                    </div>
                           );
                         })()}
                       </div>
@@ -735,7 +752,7 @@ function StoryDetail() {
                                       }}>
                                         {section.content}
                                       </p>
-                  </div>
+                    </div>
                 )}
                                 </div>
                               ))}
@@ -748,7 +765,7 @@ function StoryDetail() {
                           No Solution v2 data available for this story.
                         </p>
                       )
-                    )}
+                  )}
                 </div>
               </div>
             )}

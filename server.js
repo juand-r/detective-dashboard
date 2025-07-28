@@ -25,7 +25,7 @@ const DATASETS = {
   'true-detective': {
     name: 'True Detective Dataset',
     description: 'Short mystery puzzles from the True Detective dataset (https://github.com/TartuNLP/true-detective )',
-    detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal'),
+    detectiveSolutionsDir: path.join(__dirname, 'data/true-detective/stories'),
     summariesDir: path.join(__dirname, 'data/true-detective/summaries'),
     solutionsV2Dir: path.join(__dirname, 'data/true-detective/v2-solutions') // Will create if needed
   }
@@ -632,6 +632,16 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       }
     } catch (error) {
       console.log(`Warning: Could not read v2 solution for ${id}:`, error.message);
+    }
+
+    // For True Detective: use mystery_text and reveal_text for proper separation
+    if (dataset === 'true-detective') {
+      data.story = {
+        ...data.story,
+        full_text: data.original_metadata?.mystery_text || data.story?.full_text || '',
+        reveal_segment: data.original_metadata?.reveal_text || data.story?.reveal_segment || '',
+        border_sentence: '' // True Detective stories don't use border sentences for separation
+      };
     }
 
     const response = {

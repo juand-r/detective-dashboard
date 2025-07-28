@@ -11,18 +11,18 @@ function StoriesList() {
   const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
-    const fetchStories = async () => {
-      try {
+  const fetchStories = async () => {
+    try {
         const response = await fetch(`/api/${dataset}/stories`);
         if (!response.ok) throw new Error('Failed to fetch stories');
-        const data = await response.json();
-        setStories(data);
+      const data = await response.json();
+      setStories(data);
       } catch (error) {
         setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
     if (dataset) {
       fetchStories();
@@ -156,13 +156,13 @@ function StoriesList() {
       <div className="container">
         <div className="search-section">
           <form onSubmit={handleSearch} className="search-container">
-            <input
-              type="text"
-              placeholder="Search stories, authors, titles, or plot summaries..."
-              className="search-bar"
+          <input
+            type="text"
+            placeholder="Search stories, authors, titles, or plot summaries..."
+            className="search-bar"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          />
             <button type="submit" style={{ display: 'none' }}>Search</button>
           </form>
           
