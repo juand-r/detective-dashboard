@@ -686,6 +686,22 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     } catch (error) {
       console.log(`Warning: Could not read iterative summary for ${id}:`, error.message);
     }
+    
+    // Try to read corresponding iterative solution file (for BMDS dataset)
+    let iterativeSolution = null;
+    try {
+      if (dataset === 'bmds') {
+        const iterativeSolutionDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-custom-bmds-iterative_4chunks-v2');
+        const iterativeSolutionFileName = `${id}_latest_iterative_4chunks_response_detective_solution.json`;
+        const iterativeSolutionFilePath = path.join(iterativeSolutionDir, iterativeSolutionFileName);
+        if (fs.existsSync(iterativeSolutionFilePath)) {
+          const iterativeSolutionData = JSON.parse(fs.readFileSync(iterativeSolutionFilePath, 'utf8'));
+          iterativeSolution = iterativeSolutionData.detection?.solution || null;
+        }
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read iterative solution for ${id}:`, error.message);
+    }
 
     // For True Detective: use mystery_text and reveal_text for proper separation
     if (dataset === 'true-detective') {
@@ -710,7 +726,8 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       concatSolution: concatSolution,
       concatSummary: concatSummary,
       iterativeSummary: iterativeSummary,
-      iterativeChunkSummaries: iterativeChunkSummaries
+      iterativeChunkSummaries: iterativeChunkSummaries,
+      iterativeSolution: iterativeSolution
     };
 
     res.json(response);

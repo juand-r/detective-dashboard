@@ -1263,7 +1263,119 @@ function StoryDetail() {
                               borderRadius: '0 0 8px 8px'
                             }}>
                               <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', backgroundColor: '#ffffff' }}>
-                                <p>Mock content for Summary 1k iterative solution. This would contain the solution based on the iterative summary.</p>
+                                {dataset === 'true-detective' ? (
+                                  <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                    No iterative solution data available for true-detective dataset.
+                                  </p>
+                                ) : (
+                                  story.iterativeSolution ? (
+                                    <div style={{ lineHeight: '1.8' }}>
+                                      {(() => {
+                                        const parseStructuredSolution = (solutionText) => {
+                                          if (!solutionText || typeof solutionText !== 'string') {
+                                            return [];
+                                          }
+                                          
+                                          const sections = [];
+                                          const tagPattern = /<([^>]+)>/g;
+                                          const parts = solutionText.split(tagPattern);
+                                          
+                                          let currentSection = null;
+                                          let currentContent = '';
+                                          
+                                          for (let i = 0; i < parts.length; i++) {
+                                            const part = parts[i];
+                                            
+                                            if (i % 2 === 1) { // This is a tag
+                                              // Skip closing tags (those that start with /)
+                                              if (part.startsWith('/')) {
+                                                continue;
+                                              }
+                                              
+                                              // Save previous section if it exists
+                                              if (currentSection) {
+                                                sections.push({
+                                                  title: currentSection,
+                                                  content: currentContent.trim()
+                                                });
+                                              }
+                                              
+                                              // Start new section
+                                              currentSection = part;
+                                              currentContent = '';
+                                            } else { // This is content
+                                              currentContent += part;
+                                            }
+                                          }
+                                          
+                                          // Add final section if it exists
+                                          if (currentSection && currentContent.trim()) {
+                                            sections.push({
+                                              title: currentSection,
+                                              content: currentContent.trim()
+                                            });
+                                          }
+                                          
+                                          return sections;
+                                        };
+
+                                        const sections = parseStructuredSolution(story.iterativeSolution);
+                                        
+                                        return (
+                                          <div>
+                                            {sections.map((section, index) => (
+                                              <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                                <div 
+                                                  onClick={() => toggleSection(`iterative-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`)}
+                                                  style={{
+                                                    padding: '0.75rem 1rem',
+                                                    backgroundColor: '#f8f9fa',
+                                                    borderBottom: collapsedSections[`iterative-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? 'none' : '1px solid #e2e8f0',
+                                                    borderRadius: collapsedSections[`iterative-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? '8px' : '8px 8px 0 0',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    fontWeight: '600',
+                                                    color: '#2d3748',
+                                                    userSelect: 'none'
+                                                  }}
+                                                >
+                                                  <span>{section.title}</span>
+                                                  <span style={{ 
+                                                    transform: collapsedSections[`iterative-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                                    transition: 'transform 0.2s ease'
+                                                  }}>
+                                                    ▶
+                                                  </span>
+                                                </div>
+                                                {!collapsedSections[`iterative-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] && (
+                                                  <div style={{ 
+                                                    padding: '1rem',
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '0 0 8px 8px'
+                                                  }}>
+                                                    <div style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
+                                                      {section.content.split('\n').map((paragraph, pIndex) => (
+                                                        <p key={pIndex} style={{ marginBottom: '1rem' }}>
+                                                          {paragraph}
+                                                        </p>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  ) : (
+                                    <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                      No iterative solution data available for this story.
+                                    </p>
+                                  )
+                                )}
                               </div>
                             </div>
                           )}
