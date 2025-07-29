@@ -702,6 +702,30 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
     } catch (error) {
       console.log(`Warning: Could not read iterative solution for ${id}:`, error.message);
     }
+    
+    // Try to read corresponding oracle solution file (for both datasets)
+    let oracleSolution = null;
+    try {
+      if (dataset === 'bmds') {
+        const oracleSolutionDir = path.join(__dirname, 'data/bmds/solutions/detective_solutions-o3-without-reveal');
+        const oracleSolutionFileName = `${id}_detective_solution.json`;
+        const oracleSolutionFilePath = path.join(oracleSolutionDir, oracleSolutionFileName);
+        if (fs.existsSync(oracleSolutionFilePath)) {
+          const oracleSolutionData = JSON.parse(fs.readFileSync(oracleSolutionFilePath, 'utf8'));
+          oracleSolution = oracleSolutionData.detection?.solution || null;
+        }
+      } else if (dataset === 'true-detective') {
+        const oracleSolutionDir = path.join(__dirname, 'data/true-detective/solutions/detective_solutions-true-detective-without-reveal');
+        const oracleSolutionFileName = `${id}_detective_solution.json`;
+        const oracleSolutionFilePath = path.join(oracleSolutionDir, oracleSolutionFileName);
+        if (fs.existsSync(oracleSolutionFilePath)) {
+          const oracleSolutionData = JSON.parse(fs.readFileSync(oracleSolutionFilePath, 'utf8'));
+          oracleSolution = oracleSolutionData.detection?.solution || null;
+        }
+      }
+    } catch (error) {
+      console.log(`Warning: Could not read oracle solution for ${id}:`, error.message);
+    }
 
     // For True Detective: use mystery_text and reveal_text for proper separation
     if (dataset === 'true-detective') {
@@ -727,7 +751,8 @@ app.get('/api/:dataset/stories/:id', validateDataset, (req, res) => {
       concatSummary: concatSummary,
       iterativeSummary: iterativeSummary,
       iterativeChunkSummaries: iterativeChunkSummaries,
-      iterativeSolution: iterativeSolution
+      iterativeSolution: iterativeSolution,
+      oracleSolution: oracleSolution
     };
 
     res.json(response);

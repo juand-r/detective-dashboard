@@ -13,6 +13,8 @@ function StoryDetail() {
     'story-solution': true,  // Story Text + Solution v2 closed by default
     'reveal-segment': true,  // Reveal segment closed by default
     'solution-v2': true,     // Solution v2 collapsed by default
+    'story-oracle': true,    // Story + Oracle solution closed by default
+    'oracle-solution': true, // Oracle solution collapsed by default
     'concat-summary': true,  // Summary concat closed by default
     'concat-solution': true, // Summary concat solution collapsed by default
     'iterative-summary': true, // Summary iterative closed by default
@@ -829,7 +831,237 @@ function StoryDetail() {
                 )}
               </div>
 
-              {/* Section 2: Summary 1k concat + Solution */}
+              {/* Section 2: Story Up to Reveal + Oracle Solution */}
+              <div style={{ marginBottom: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <div 
+                  onClick={() => toggleSection('story-oracle')}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: '#d4f4d4',
+                    borderBottom: collapsedSections['story-oracle'] ? 'none' : '1px solid #e2e8f0',
+                    borderRadius: collapsedSections['story-oracle'] ? '8px' : '8px 8px 0 0',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontWeight: '600',
+                    color: '#2d3748',
+                    userSelect: 'none'
+                  }}
+                >
+                  <span>Story Up to Reveal + Oracle Solution</span>
+                  <span style={{ 
+                    transform: collapsedSections['story-oracle'] ? 'rotate(0deg)' : 'rotate(90deg)',
+                    transition: 'transform 0.2s ease',
+                    fontSize: '1.2rem'
+                  }}>
+                    ▶
+                  </span>
+                </div>
+                {!collapsedSections['story-oracle'] && (
+                  <div style={{ padding: '1.5rem', backgroundColor: '#f0f9f0', borderRadius: '0 0 8px 8px' }}>
+                    <div style={{ display: 'flex', gap: '2rem' }}>
+                      {/* Story Text Section (Left Side) - Without Reveal */}
+                      <div style={{ flex: 1 }}>
+                        <div className="section-title" style={{ marginBottom: '1rem' }}>Story Up to Reveal</div>
+                        <div className="story-content" style={{ lineHeight: '1.8', maxHeight: '450px', overflowY: 'auto', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '4px', backgroundColor: '#ffffff' }}>
+                          {story.story?.full_text ? 
+                            (() => {
+                              // Remove the reveal segment from the full text using border_sentence
+                              let storyText = story.story.full_text;
+                              if (story.story?.border_sentence) {
+                                const borderIndex = storyText.indexOf(story.story.border_sentence);
+                                if (borderIndex !== -1) {
+                                  storyText = storyText.substring(0, borderIndex).trim();
+                                }
+                              }
+                              return (
+                                <>
+                                  {storyText.split('\n').map((paragraph, index) => (
+                                    <p key={index} style={{ marginBottom: '1rem' }}>
+                                      {paragraph}
+                                    </p>
+                                  ))}
+                                </>
+                              );
+                            })() : 
+                            'No story text available'
+                          }
+                        </div>
+                      </div>
+
+                      {/* Oracle Solution Section (Right Side) - Horizontally Collapsible */}
+                      <div style={{ 
+                        flex: collapsedSections['oracle-solution'] ? '0 0 40px' : '1',
+                        transition: 'flex 0.3s ease',
+                        minWidth: collapsedSections['oracle-solution'] ? '40px' : 'auto'
+                      }}>
+                        {/* Oracle solution as horizontally collapsible section */}
+                        <div style={{ 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '8px',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: collapsedSections['oracle-solution'] ? 'column' : 'column'
+                        }}>
+                          <div 
+                            onClick={() => toggleSection('oracle-solution')}
+                            style={{
+                              padding: collapsedSections['oracle-solution'] ? '1rem 0.5rem' : '1rem',
+                              backgroundColor: '#f8fafc',
+                              borderBottom: collapsedSections['oracle-solution'] ? 'none' : '1px solid #e2e8f0',
+                              borderRadius: collapsedSections['oracle-solution'] ? '8px' : '8px 8px 0 0',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: collapsedSections['oracle-solution'] ? 'center' : 'space-between',
+                              alignItems: 'center',
+                              fontWeight: '600',
+                              color: '#2d3748',
+                              userSelect: 'none',
+                              writingMode: collapsedSections['oracle-solution'] ? 'vertical-rl' : 'horizontal-tb',
+                              textOrientation: collapsedSections['oracle-solution'] ? 'mixed' : 'unset',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <span style={{ fontSize: collapsedSections['oracle-solution'] ? '0.9rem' : '1rem' }}>
+                              {collapsedSections['oracle-solution'] ? 'Oracle' : 'Oracle Solution'}
+                            </span>
+                            {!collapsedSections['oracle-solution'] && (
+                              <span style={{ 
+                                transform: 'rotate(90deg)',
+                                transition: 'transform 0.2s ease',
+                                fontSize: '1.2rem'
+                              }}>
+                                ▶
+                              </span>
+                            )}
+                          </div>
+                          {!collapsedSections['oracle-solution'] && (
+                            <div style={{ 
+                              padding: '1.5rem',
+                              backgroundColor: '#ffffff',
+                              borderRadius: '0 0 8px 8px'
+                            }}>
+                              <div style={{ lineHeight: '1.8', maxHeight: '400px', overflowY: 'auto', backgroundColor: '#ffffff' }}>
+                                                                 {story.oracleSolution ? (
+                                    <div style={{ lineHeight: '1.8' }}>
+                                      {(() => {
+                                        const parseStructuredSolution = (solutionText) => {
+                                          if (!solutionText || typeof solutionText !== 'string') {
+                                            return [];
+                                          }
+                                          
+                                          const sections = [];
+                                          const tagPattern = /<([^>]+)>/g;
+                                          const parts = solutionText.split(tagPattern);
+                                          
+                                          let currentSection = null;
+                                          let currentContent = '';
+                                          
+                                          for (let i = 0; i < parts.length; i++) {
+                                            const part = parts[i];
+                                            
+                                            if (i % 2 === 1) { // This is a tag
+                                              // Skip closing tags (those that start with /)
+                                              if (part.startsWith('/')) {
+                                                continue;
+                                              }
+                                              
+                                              // Save previous section if it exists
+                                              if (currentSection) {
+                                                sections.push({
+                                                  title: currentSection,
+                                                  content: currentContent.trim()
+                                                });
+                                              }
+                                              
+                                              // Start new section
+                                              currentSection = part;
+                                              currentContent = '';
+                                            } else { // This is content
+                                              currentContent += part;
+                                            }
+                                          }
+                                          
+                                          // Add final section if it exists
+                                          if (currentSection && currentContent.trim()) {
+                                            sections.push({
+                                              title: currentSection,
+                                              content: currentContent.trim()
+                                            });
+                                          }
+                                          
+                                          return sections;
+                                        };
+
+                                        const sections = parseStructuredSolution(story.oracleSolution);
+                                        
+                                        return (
+                                          <div>
+                                            {sections.map((section, index) => (
+                                              <div key={index} style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                                <div 
+                                                  onClick={() => toggleSection(`oracle-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`)}
+                                                  style={{
+                                                    padding: '0.75rem 1rem',
+                                                    backgroundColor: '#f8f9fa',
+                                                    borderBottom: collapsedSections[`oracle-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? 'none' : '1px solid #e2e8f0',
+                                                    borderRadius: collapsedSections[`oracle-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? '8px' : '8px 8px 0 0',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    fontWeight: '600',
+                                                    color: '#2d3748',
+                                                    userSelect: 'none'
+                                                  }}
+                                                >
+                                                  <span>{section.title}</span>
+                                                  <span style={{ 
+                                                    transform: collapsedSections[`oracle-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] ? 'rotate(0deg)' : 'rotate(90deg)',
+                                                    transition: 'transform 0.2s ease'
+                                                  }}>
+                                                    ▶
+                                                  </span>
+                                                </div>
+                                                {!collapsedSections[`oracle-solution-${section.title.toLowerCase().replace(/\s+/g, '-')}`] && (
+                                                  <div style={{ 
+                                                    padding: '1rem',
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '0 0 8px 8px'
+                                                  }}>
+                                                    <div style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
+                                                      {section.content.split('\n').map((paragraph, pIndex) => (
+                                                        <p key={pIndex} style={{ marginBottom: '1rem' }}>
+                                                          {paragraph}
+                                                        </p>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  ) : (
+                                    <p style={{ fontStyle: 'italic', color: '#718096' }}>
+                                      No oracle solution data available for this story.
+                                    </p>
+                                  )
+                                }
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 3: Summary 1k concat + Solution */}
               <div style={{ marginBottom: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                 <div 
                   onClick={() => toggleSection('concat-summary')}
